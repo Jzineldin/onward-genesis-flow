@@ -1,10 +1,214 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateImage } from "../generate-story-segment/image.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// OVH Image Generation Service
+async function generateImageWithOVH(prompt: string, settings?: any): Promise<Blob | null> {
+    const OVH_API_TOKEN = Deno.env.get('OVH_API_TOKEN');
+    if (!OVH_API_TOKEN) {
+        console.error('🔑 OVH_API_TOKEN is not set. Please configure it in Supabase Edge Functions secrets.');
+        return null;
+    }
+
+    const IMAGE_GENERATION_URL = 'https://stable-diffusion-xl.endpoints.kepler.ai.cloud.ovh.net/api/text2image';
+
+    console.log('🎨 Calling OVHcloud AI Endpoints for image generation...');
+    console.log(`📝 Prompt: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"`);
+    
+    const negativePrompt = settings?.negative_prompt || 'Ugly, blurry, low quality, deformed, distorted';
+    const steps = settings?.steps || 20;
+    
+    console.log(`⚙️ Using settings - Steps: ${steps}, Negative prompt: "${negativePrompt}"`);
+    
+    try {
+        const response = await fetch(IMAGE_GENERATION_URL, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Accept': 'application/octet-stream', 
+                'Authorization': `Bearer ${OVH_API_TOKEN}` 
+            },
+            body: JSON.stringify({ 
+                prompt: prompt, 
+                negative_prompt: negativePrompt,
+                num_inference_steps: steps
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            
+            if (response.status === 429) {
+                console.error('⚠️ OVH Rate Limit Exceeded: You have exceeded the rate limit for OVHcloud AI Endpoints.');
+                console.error('📊 Rate limits: Anonymous (2 req/min), Authenticated (400 req/min per project)');
+                console.error('💡 Please wait before making another request or check your authentication.');
+                return null;
+            }
+            
+            console.error(`❌ OVH Image Generation Failed (${response.status}): ${errorText}`);
+            console.error('🔧 Check your API token and request parameters');
+            return null;
+        }
+        
+        console.log('✅ Successfully generated 1024x1024 image with OVHcloud AI Endpoints (Stable Diffusion XL)');
+        return await response.blob();
+    } catch (error) {
+        console.error('💥 Network error during OVH image generation:', error);
+        console.error('🌐 Check your internet connection and OVHcloud service availability');
+        return null;
+    }
+}
+
+// OpenAI Image Generation Service
+async function generateImageWithOpenAI(prompt: string, visualContext?: any): Promise<Blob | null> {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIApiKey) {
+    console.error('OpenAI API key not found');
+    return null;
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024',
+        response_format: 'b64_json'
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenAI API error:', data);
+      return null;
+    }
+
+    const base64Image = data.data[0].b64_json;
+    const binaryString = atob(base64Image);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    return new Blob([bytes], { type: 'image/png' });
+  } catch (error) {
+    console.error('Error generating image with OpenAI:', error);
+    return null;
+  }
+}
+
+// Get generation settings from database
+async function getGenerationSettings(client: any) {
+  const { data } = await client
+    .from('admin_settings')
+    .select('key, value')
+    .in('key', [
+      'image_provider_primary',
+      'image_provider_fallback',
+      'ovh_negative_prompt',
+      'ovh_steps'
+    ]);
+
+  const settings = {
+    imageProviders: {
+      primary: 'openai',
+      fallback: 'ovh',
+      ovhSettings: {
+        negative_prompt: 'Ugly, blurry, low quality, deformed, distorted',
+        steps: 20
+      }
+    }
+  };
+
+  if (data) {
+    data.forEach((setting: any) => {
+      switch (setting.key) {
+        case 'image_provider_primary':
+          settings.imageProviders.primary = setting.value || 'openai';
+          break;
+        case 'image_provider_fallback':
+          settings.imageProviders.fallback = setting.value || 'ovh';
+          break;
+        case 'ovh_negative_prompt':
+          settings.imageProviders.ovhSettings.negative_prompt = setting.value || 'Ugly, blurry, low quality, deformed, distorted';
+          break;
+        case 'ovh_steps':
+          settings.imageProviders.ovhSettings.steps = parseInt(setting.value) || 20;
+          break;
+      }
+    });
+  }
+
+  return settings;
+}
+
+// Enhanced image prompt creation
+function createEnhancedImagePrompt(originalPrompt: string, visualContext: any): string {
+  const style = visualContext?.style || "epic fantasy illustration, digital art, cinematic lighting, high detail";
+  return `${originalPrompt}, ${style}`;
+}
+
+// Main image generation function
+async function generateImage(prompt: string, client: any, testMode: boolean = false): Promise<Blob | null> {
+  console.log('🎨 Starting dynamic image generation...');
+  console.log(`🧪 Test mode: ${testMode}`);
+  
+  const settings = await getGenerationSettings(client);
+  const primaryProvider = settings.imageProviders.primary;
+  const fallbackProvider = settings.imageProviders.fallback;
+
+  const visualContext = {
+    style: "epic fantasy illustration, digital art, cinematic lighting, high detail",
+    characters: []
+  };
+
+  const enhancedPrompt = createEnhancedImagePrompt(prompt, visualContext);
+
+  console.log(`Primary provider set to: ${primaryProvider}`);
+  
+  // Try Primary Provider
+  let imageBlob = await callImageProvider(primaryProvider, enhancedPrompt, settings);
+
+  if (imageBlob) {
+    console.log(`✅ Successfully generated image with primary provider: ${primaryProvider}`);
+    return imageBlob;
+  }
+
+  // If Primary Fails, Try Fallback Provider
+  console.warn(`Primary provider '${primaryProvider}' failed. Trying fallback: ${fallbackProvider}`);
+  imageBlob = await callImageProvider(fallbackProvider, enhancedPrompt, settings);
+  
+  if (imageBlob) {
+    console.log(`✅ Successfully generated image with fallback provider: ${fallbackProvider}`);
+    return imageBlob;
+  }
+
+  console.error('❌ All image generation providers failed.');
+  return null;
+}
+
+// Helper function to call the correct service based on the provider name
+async function callImageProvider(provider: string, prompt: string, settings: any): Promise<Blob | null> {
+    switch (provider) {
+        case 'ovh':
+            return await generateImageWithOVH(prompt, settings.imageProviders?.ovhSettings);
+        case 'openai':
+            return await generateImageWithOpenAI(prompt, null);
+        default:
+            console.error(`Unknown image provider setting: '${provider}'. Defaulting to OpenAI.`);
+            return await generateImageWithOpenAI(prompt, null);
+    }
 }
 
 serve(async (req) => {
