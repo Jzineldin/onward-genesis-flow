@@ -17,8 +17,9 @@ export const useAdminAccess = () => {
           return;
         }
 
-        // For now, just check if user exists - no roles table implemented yet
-        const isAdmin = user.email === 'admin@taleforge.com'; // Replace with your admin email
+        // Admin emails list
+        const adminEmails = ['admin@taleforge.com', 'Jzineldin@gmail.com'];
+        const isAdmin = adminEmails.includes(user.email || '');
         setHasAccess(isAdmin);
       } catch (error) {
         console.error('Error checking admin access:', error);

@@ -62,10 +62,11 @@ const ImageProviderSettings: React.FC<ImageProviderSettingsProps> = ({ settings,
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="replicate">Replicate (Recommended)</SelectItem>
+                <SelectItem value="ovh">OVHcloud (SDXL)</SelectItem>
+                <SelectItem value="openai">DALL-E</SelectItem>
+                <SelectItem value="replicate">Replicate</SelectItem>
                 <SelectItem value="hugging-face">Hugging Face</SelectItem>
                 <SelectItem value="stable-diffusion">Stable Diffusion</SelectItem>
-                <SelectItem value="dalle">DALL-E</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -79,10 +80,11 @@ const ImageProviderSettings: React.FC<ImageProviderSettingsProps> = ({ settings,
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ovh">OVHcloud (SDXL)</SelectItem>
+                <SelectItem value="openai">DALL-E</SelectItem>
                 <SelectItem value="hugging-face">Hugging Face</SelectItem>
                 <SelectItem value="replicate">Replicate</SelectItem>
                 <SelectItem value="stable-diffusion">Stable Diffusion</SelectItem>
-                <SelectItem value="dalle">DALL-E</SelectItem>
               </SelectContent>
             </Select>
           </div>
