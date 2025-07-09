@@ -11,8 +11,9 @@ import { generateImageWithOVH } from "./ovh-image-service.ts";
  * Main function for generating images.
  * It reads the settings from the database to decide which provider to use.
  */
-export async function generateImage(prompt: string, client: SupabaseClient): Promise<Blob | null> {
+export async function generateImage(prompt: string, client: SupabaseClient, testMode: boolean = false): Promise<Blob | null> {
   console.log('🎨 Starting dynamic image generation...');
+  console.log(`🧪 Test mode: ${testMode}`);
   
   const settings = await getGenerationSettings(client);
   const primaryProvider = settings.imageProviders.primary;
@@ -28,7 +29,7 @@ export async function generateImage(prompt: string, client: SupabaseClient): Pro
   console.log(`Primary provider set to: ${primaryProvider}`);
   
   // --- Try Primary Provider ---
-  let imageBlob = await callImageProvider(primaryProvider, enhancedPrompt);
+  let imageBlob = await callImageProvider(primaryProvider, enhancedPrompt, settings);
 
   if (imageBlob) {
     console.log(`✅ Successfully generated image with primary provider: ${primaryProvider}`);
@@ -37,7 +38,7 @@ export async function generateImage(prompt: string, client: SupabaseClient): Pro
 
   // --- If Primary Fails, Try Fallback Provider ---
   console.warn(`Primary provider '${primaryProvider}' failed. Trying fallback: ${fallbackProvider}`);
-  imageBlob = await callImageProvider(fallbackProvider, enhancedPrompt);
+  imageBlob = await callImageProvider(fallbackProvider, enhancedPrompt, settings);
   
   if (imageBlob) {
     console.log(`✅ Successfully generated image with fallback provider: ${fallbackProvider}`);
@@ -51,10 +52,10 @@ export async function generateImage(prompt: string, client: SupabaseClient): Pro
 /**
  * Helper function to call the correct service based on the provider name.
  */
-async function callImageProvider(provider: string, prompt: string): Promise<Blob | null> {
+async function callImageProvider(provider: string, prompt: string, settings: any): Promise<Blob | null> {
     switch (provider) {
         case 'ovh':
-            return await generateImageWithOVH(prompt);
+            return await generateImageWithOVH(prompt, settings.imageProviders?.ovhSettings);
         case 'openai':
             return await generateImageWithOpenAI(prompt, null);
         // Add other providers like 'replicate' here in the future

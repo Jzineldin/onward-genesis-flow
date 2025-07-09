@@ -42,6 +42,11 @@ export interface ProviderSettings {
       aspect_ratio: string;
       output_format: string;
     };
+    ovhSettings: {
+      model: string;
+      negative_prompt: string;
+      steps: number;
+    };
   };
   ttsProviders: {
     primary: string;
@@ -88,6 +93,11 @@ const defaultSettings: ProviderSettings = {
       steps: 4,
       aspect_ratio: '1:1',
       output_format: 'webp',
+    },
+    ovhSettings: {
+      model: 'sdxl',
+      negative_prompt: 'Ugly, blurry, low quality',
+      steps: 20,
     },
   },
   ttsProviders: {

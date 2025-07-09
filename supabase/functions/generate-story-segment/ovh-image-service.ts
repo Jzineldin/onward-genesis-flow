@@ -1,4 +1,4 @@
-export async function generateImageWithOVH(prompt: string): Promise<Blob | null> {
+export async function generateImageWithOVH(prompt: string, settings?: any): Promise<Blob | null> {
     const OVH_API_TOKEN = Deno.env.get('OVH_API_TOKEN');
     if (!OVH_API_TOKEN) {
         console.error('OVH_API_TOKEN is not set.');
@@ -9,6 +9,10 @@ export async function generateImageWithOVH(prompt: string): Promise<Blob | null>
 
     console.log('🎨 Calling OVHcloud for image generation...');
     
+    // Use settings if provided, otherwise use defaults
+    const negativePrompt = settings?.negative_prompt || 'Ugly, blurry, low quality';
+    const steps = settings?.steps || 20;
+    
     try {
         const response = await fetch(IMAGE_GENERATION_URL, {
             method: 'POST',
@@ -17,7 +21,11 @@ export async function generateImageWithOVH(prompt: string): Promise<Blob | null>
                 'Accept': 'application/octet-stream', 
                 'Authorization': `Bearer ${OVH_API_TOKEN}` 
             },
-            body: JSON.stringify({ prompt: prompt, negative_prompt: "Ugly, blurry, low quality" }),
+            body: JSON.stringify({ 
+                prompt: prompt, 
+                negative_prompt: negativePrompt,
+                num_inference_steps: steps
+            }),
         });
 
         if (!response.ok) {

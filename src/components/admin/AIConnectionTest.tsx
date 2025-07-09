@@ -16,7 +16,7 @@ interface TestResult {
 const AIConnectionTest: React.FC = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([
     { service: 'Text Generation (Gemini)', status: 'idle' },
-    { service: 'Image Generation (DALL-E 3)', status: 'idle' },
+    { service: 'Image Generation (Dynamic)', status: 'idle' },
     { service: 'Audio Generation (OpenAI TTS)', status: 'idle' },
     { service: 'Health Check', status: 'idle' }
   ]);
@@ -113,18 +113,14 @@ const AIConnectionTest: React.FC = () => {
 
   const testImageGeneration = async () => {
     const startTime = Date.now();
-    updateTestResult('Image Generation (DALL-E 3)', { status: 'testing' });
+    updateTestResult('Image Generation (Dynamic)', { status: 'testing' });
 
     try {
-      // We'll test this by calling the edge function with a test flag
-      const { data, error } = await supabase.functions.invoke('generate-story-segment', {
+      // Test the new dynamic image generation directly
+      const { data, error } = await supabase.functions.invoke('regenerate-image', {
         body: {
-          storyId: 'test-story-id',
-          prompt: 'A magical forest scene for testing',
-          choice: null,
-          parentSegmentId: null,
-          testMode: true,
-          testImageOnly: true
+          prompt: 'A magical forest scene for testing - admin panel connection test',
+          testMode: true
         }
       });
       
@@ -132,13 +128,13 @@ const AIConnectionTest: React.FC = () => {
       
       if (error) throw error;
       
-      updateTestResult('Image Generation (DALL-E 3)', { 
+      updateTestResult('Image Generation (Dynamic)', { 
         status: 'success', 
-        message: `Generated image in ${duration}ms`,
+        message: `Generated test image in ${duration}ms`,
         duration 
       });
     } catch (error) {
-      updateTestResult('Image Generation (DALL-E 3)', { 
+      updateTestResult('Image Generation (Dynamic)', { 
         status: 'error', 
         message: error.message || 'Image generation failed' 
       });

@@ -31,6 +31,11 @@ interface ImageProviderSettings {
     aspect_ratio: string;
     output_format: string;
   };
+  ovhSettings: {
+    model: string;
+    negative_prompt: string;
+    steps: number;
+  };
 }
 
 interface ImageProviderSettingsProps {
@@ -266,6 +271,56 @@ const ImageProviderSettings: React.FC<ImageProviderSettingsProps> = ({ settings,
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-white">OVHcloud Settings</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-white">Model</Label>
+              <Select
+                value={settings.ovhSettings?.model || 'sdxl'}
+                onValueChange={(value) => onUpdate('ovhSettings', {
+                  ...settings.ovhSettings,
+                  model: value
+                })}
+              >
+                <SelectTrigger className="bg-slate-700 border-purple-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sdxl">Stable Diffusion XL</SelectItem>
+                  <SelectItem value="sdxl-turbo">SDXL Turbo (Faster)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-white">Steps</Label>
+              <Input
+                type="number"
+                value={settings.ovhSettings?.steps || 20}
+                onChange={(e) => onUpdate('ovhSettings', {
+                  ...settings.ovhSettings,
+                  steps: parseInt(e.target.value) || 20
+                })}
+                className="bg-slate-700 border-purple-600 text-white"
+                min="1"
+                max="50"
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="text-white">Negative Prompt</Label>
+            <Input
+              value={settings.ovhSettings?.negative_prompt || 'Ugly, blurry, low quality'}
+              onChange={(e) => onUpdate('ovhSettings', {
+                ...settings.ovhSettings,
+                negative_prompt: e.target.value
+              })}
+              className="bg-slate-700 border-purple-600 text-white"
+              placeholder="Describe what to avoid in images"
+            />
           </div>
         </div>
       </CardContent>
