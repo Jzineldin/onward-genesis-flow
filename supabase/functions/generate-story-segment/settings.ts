@@ -40,6 +40,11 @@ export interface GenerationSettings {
       aspect_ratio: string;
       output_format: string;
     };
+    ovhSettings: {
+      model: string;
+      negative_prompt: string;
+      steps: number;
+    };
   };
   ttsProviders: {
     primary: string;
@@ -63,8 +68,8 @@ const defaultSettings: GenerationSettings = {
     },
   },
   imageProviders: {
-    primary: 'openai',
-    fallback: 'replicate',
+    primary: 'ovh',  // Changed default to OVH
+    fallback: 'openai',  // Changed fallback to OpenAI
     huggingFaceSettings: {
       model: 'black-forest-labs/FLUX.1-schnell',
       steps: 4,
@@ -87,6 +92,11 @@ const defaultSettings: GenerationSettings = {
       aspect_ratio: '1:1',
       output_format: 'webp',
     },
+    ovhSettings: {
+      model: 'sdxl',
+      negative_prompt: 'Ugly, blurry, low quality',
+      steps: 20,
+    },
   },
   ttsProviders: {
     primary: 'openai',
@@ -97,41 +107,65 @@ const defaultSettings: GenerationSettings = {
 
 export async function getGenerationSettings(supabaseClient: SupabaseClient): Promise<GenerationSettings> {
   try {
+    console.log('🔧 Loading admin settings from database...');
+    
     const { data, error } = await supabaseClient
       .from('admin_settings')
       .select('key, value')
       .in('key', ['text_providers', 'image_providers', 'tts_providers']);
 
     if (error) {
-      console.log('Admin settings query error:', error.message);
+      console.log('❌ Admin settings query error:', error.message);
+      console.log('📋 Using default settings with OVH as primary');
       return defaultSettings;
     }
 
     if (!data || data.length === 0) {
-      console.log('No admin settings found, using defaults');
+      console.log('⚠️ No admin settings found in database');
+      console.log('📋 Using default settings with OVH as primary');
       return defaultSettings;
     }
+
+    console.log('📊 Found admin settings:', data.map(d => ({ key: d.key, hasValue: !!d.value })));
 
     const settings = { ...defaultSettings };
     
     data.forEach(setting => {
       try {
         const parsedValue = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
+        
         if (setting.key === 'text_providers') {
+          console.log('🔤 Loading text provider settings:', parsedValue);
           settings.textProviders = { ...settings.textProviders, ...parsedValue };
         } else if (setting.key === 'image_providers') {
+          console.log('🎨 Loading image provider settings:', parsedValue);
           settings.imageProviders = { ...settings.imageProviders, ...parsedValue };
+          
+          // Log the final image provider configuration
+          console.log(`🎯 Image Provider Configuration:
+            Primary: ${settings.imageProviders.primary}
+            Fallback: ${settings.imageProviders.fallback}
+            OVH Settings: ${JSON.stringify(settings.imageProviders.ovhSettings)}`);
         } else if (setting.key === 'tts_providers') {
+          console.log('🔊 Loading TTS provider settings:', parsedValue);
           settings.ttsProviders = { ...settings.ttsProviders, ...parsedValue };
         }
       } catch (parseError) {
-        console.log(`Failed to parse setting ${setting.key}:`, parseError);
+        console.error(`❌ Failed to parse setting ${setting.key}:`, parseError);
+        console.log(`📄 Raw value: ${setting.value}`);
       }
     });
 
+    // Final verification log
+    console.log(`✅ Final Settings Loaded:
+      🎨 Image Primary: ${settings.imageProviders.primary}
+      🔄 Image Fallback: ${settings.imageProviders.fallback}
+      ⚙️ OVH Configured: ${settings.imageProviders.ovhSettings ? 'Yes' : 'No'}`);
+
     return settings;
   } catch (error) {
-    console.log('Error loading admin settings, using defaults:', error);
+    console.error('💥 Critical error loading admin settings:', error);
+    console.log('📋 Falling back to default settings with OVH as primary');
     return defaultSettings;
   }
 }

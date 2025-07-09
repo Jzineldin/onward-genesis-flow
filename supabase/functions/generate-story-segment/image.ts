@@ -19,6 +19,11 @@ export async function generateImage(prompt: string, client: SupabaseClient, test
   const primaryProvider = settings.imageProviders.primary;
   const fallbackProvider = settings.imageProviders.fallback;
 
+  console.log(`🎯 PROVIDER SELECTION:
+    Primary: ${primaryProvider}
+    Fallback: ${fallbackProvider}
+    Using settings from admin panel: YES`);
+
   const visualContext = {
     style: "epic fantasy illustration, digital art, cinematic lighting, high detail",
     characters: [] // This will be loaded from story data in the future
@@ -26,26 +31,45 @@ export async function generateImage(prompt: string, client: SupabaseClient, test
 
   const enhancedPrompt = createEnhancedImagePrompt(prompt, visualContext);
 
-  console.log(`Primary provider set to: ${primaryProvider}`);
+  // Enhanced logging for provider visibility
+  const logProviderAttempt = (provider: string, status: 'attempting' | 'success' | 'error', details?: any) => {
+    console.log(`[PROVIDER_LOG] ${provider.toUpperCase()}: ${status}`, details || '');
+  };
+
+  console.log(`🚀 Starting with PRIMARY provider: ${primaryProvider}`);
+  logProviderAttempt(primaryProvider, 'attempting', { 
+    prompt: enhancedPrompt.substring(0, 100),
+    settings: primaryProvider === 'ovh' ? settings.imageProviders.ovhSettings : 'default'
+  });
   
   // --- Try Primary Provider ---
   let imageBlob = await callImageProvider(primaryProvider, enhancedPrompt, settings);
 
   if (imageBlob) {
-    console.log(`✅ Successfully generated image with primary provider: ${primaryProvider}`);
+    logProviderAttempt(primaryProvider, 'success', { size: imageBlob.size });
+    console.log(`✅ SUCCESS with PRIMARY provider: ${primaryProvider}`);
     return imageBlob;
   }
 
   // --- If Primary Fails, Try Fallback Provider ---
-  console.warn(`Primary provider '${primaryProvider}' failed. Trying fallback: ${fallbackProvider}`);
+  logProviderAttempt(primaryProvider, 'error', { reason: 'No result returned' });
+  console.warn(`❌ PRIMARY provider '${primaryProvider}' failed. Switching to FALLBACK: ${fallbackProvider}`);
+  logProviderAttempt(fallbackProvider, 'attempting', { 
+    prompt: enhancedPrompt.substring(0, 100), 
+    fallback: true,
+    settings: fallbackProvider === 'ovh' ? settings.imageProviders.ovhSettings : 'default'
+  });
+  
   imageBlob = await callImageProvider(fallbackProvider, enhancedPrompt, settings);
   
   if (imageBlob) {
-    console.log(`✅ Successfully generated image with fallback provider: ${fallbackProvider}`);
+    logProviderAttempt(fallbackProvider, 'success', { size: imageBlob.size, fallback: true });
+    console.log(`✅ SUCCESS with FALLBACK provider: ${fallbackProvider}`);
     return imageBlob;
   }
 
-  console.error('❌ All image generation providers failed.');
+  logProviderAttempt(fallbackProvider, 'error', { reason: 'No result returned', fallback: true });
+  console.error('❌ ALL image generation providers failed (primary AND fallback)');
   return null;
 }
 
@@ -53,15 +77,36 @@ export async function generateImage(prompt: string, client: SupabaseClient, test
  * Helper function to call the correct service based on the provider name.
  */
 async function callImageProvider(provider: string, prompt: string, settings: any): Promise<Blob | null> {
-    switch (provider) {
-        case 'ovh':
-            return await generateImageWithOVH(prompt, settings.imageProviders?.ovhSettings);
-        case 'openai':
-            return await generateImageWithOpenAI(prompt, null);
-        // Add other providers like 'replicate' here in the future
-        default:
-            console.error(`Unknown image provider setting: '${provider}'. Defaulting to OpenAI.`);
-            return await generateImageWithOpenAI(prompt, null);
+    const startTime = Date.now();
+    try {
+        console.log(`[PROVIDER_CALL] 🔧 Calling ${provider.toUpperCase()} provider`);
+        
+        let result: Blob | null = null;
+        
+        switch (provider) {
+            case 'ovh':
+                console.log(`[PROVIDER_CALL] 🏭 Using OVH with settings:`, settings.imageProviders?.ovhSettings);
+                result = await generateImageWithOVH(prompt, settings.imageProviders?.ovhSettings);
+                break;
+            case 'openai':
+                console.log(`[PROVIDER_CALL] 🤖 Using OpenAI DALL-E`);
+                result = await generateImageWithOpenAI(prompt, null);
+                break;
+            default:
+                console.error(`[PROVIDER_CALL] ❓ Unknown provider: '${provider}'. Defaulting to OpenAI.`);
+                result = await generateImageWithOpenAI(prompt, null);
+                break;
+        }
+        
+        const duration = (Date.now() - startTime) / 1000;
+        const status = result ? 'SUCCESS' : 'FAILED';
+        console.log(`[PROVIDER_CALL] ${provider.toUpperCase()} completed in ${duration}s - ${status}`);
+        
+        return result;
+    } catch (error) {
+        const duration = (Date.now() - startTime) / 1000;
+        console.error(`[PROVIDER_CALL] ❌ Error with ${provider.toUpperCase()} after ${duration}s:`, error);
+        return null;
     }
 }
 
