@@ -7,6 +7,8 @@ import ImageProviderSettings from '@/components/admin/ImageProviderSettings';
 import TTSProviderSettings from '@/components/admin/TTSProviderSettings';
 import AIConnectionTest from '@/components/admin/AIConnectionTest';
 import AdminWaitlistViewer from '@/components/admin/AdminWaitlistViewer';
+import ProviderMonitor from '@/components/admin/ProviderMonitor';
+import ImageProviderStatus from '@/components/admin/ImageProviderStatus';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -106,6 +108,11 @@ const Admin: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <AIConnectionTest />
           <AdminWaitlistViewer />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <ProviderMonitor />
+          <ImageProviderStatus />
         </div>
 
         <div className="space-y-8">
