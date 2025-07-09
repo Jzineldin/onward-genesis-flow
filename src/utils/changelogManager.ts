@@ -27,6 +27,25 @@ class ChangelogManager {
     // Return updated default changelog with latest improvements
     return [
       {
+        version: '2.7.0',
+        date: '2025-07-09',
+        type: 'minor',
+        changes: [
+          { type: 'feature', description: 'Advanced Provider Monitoring System - Real-time tracking of AI provider usage, health status, and performance metrics' },
+          { type: 'feature', description: 'Enhanced Admin Panel - Comprehensive provider management with visual status indicators and usage statistics' },
+          { type: 'feature', description: 'Image Provider Status Dashboard - Live monitoring of OVH and OpenAI image generation services with health checks' },
+          { type: 'feature', description: 'Provider Testing Tools - Individual provider testing capabilities with detailed response time monitoring' },
+          { type: 'improvement', description: 'Enhanced Edge Function Logging - Detailed logging system for image generation with provider-specific tracking' },
+          { type: 'improvement', description: 'Real-time Activity Log - Live feed of AI provider activity with success/error tracking and fallback monitoring' },
+          { type: 'improvement', description: 'Provider Health Monitoring - Automatic health checks with error rate tracking and performance analytics' },
+          { type: 'improvement', description: 'Enhanced Fallback System - Improved provider switching with detailed logging when primary provider fails' },
+          { type: 'feature', description: 'Provider Usage Analytics - Comprehensive statistics showing OVH vs OpenAI usage patterns and success rates' },
+          { type: 'improvement', description: 'Admin Interface Enhancement - Better organization of provider settings with visual status indicators' },
+          { type: 'feature', description: 'Debug Tools Integration - Advanced debugging capabilities for troubleshooting AI provider issues' },
+          { type: 'improvement', description: 'Enhanced Error Handling - Better error reporting and recovery mechanisms for AI generation failures' },
+        ],
+      },
+      {
         version: '2.6.0',
         date: '2025-07-04',
         type: 'minor',
@@ -178,7 +197,7 @@ class ChangelogManager {
   }
   
   // Generate version number based on change types
-  static generateNextVersion(changes: ChangelogEntry['changes'], currentVersion: string = '2.6.0'): string {
+  static generateNextVersion(changes: ChangelogEntry['changes'], currentVersion: string = '2.7.0'): string {
     const [major, minor, patch] = currentVersion.split('.').map(Number);
     
     const hasMajor = changes.some(change => change.type === 'feature' && change.description.includes('breaking'));
@@ -199,7 +218,7 @@ class ChangelogManager {
   // Quick method to add changes
   static logChanges(changes: { type: 'feature' | 'improvement' | 'fix'; description: string }[]): void {
     const current = this.getCurrentChangelog();
-    const currentVersion = current[0]?.version || '2.6.0';
+    const currentVersion = current[0]?.version || '2.7.0';
     const nextVersion = this.generateNextVersion(changes, currentVersion);
     
     const entry: ChangelogEntry = {

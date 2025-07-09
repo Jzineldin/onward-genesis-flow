@@ -28,8 +28,14 @@ export const useChangelog = () => {
     logChange({ type: 'fix', description });
   }, [logChange]);
 
-  // Remove the useEffect that was logging recent improvements since they're now in the main changelog
-  // This prevents duplicate entries and ensures a clean changelog experience
+  // Initialize the changelog with v2.7.0 changes if not already present
+  useEffect(() => {
+    const currentChangelog = ChangelogManager.getCurrentChangelog();
+    if (currentChangelog.length === 0 || currentChangelog[0].version !== '2.7.0') {
+      // This will trigger the changelog to be updated with the new default entries
+      ChangelogManager.getCurrentChangelog();
+    }
+  }, []);
 
   return {
     logChange,
