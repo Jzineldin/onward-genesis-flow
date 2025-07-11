@@ -127,7 +127,7 @@ export const useStoryActions = (
         toast.success('Story completed with a generated ending! 🎉');
       } else {
         // Fallback: just mark the current segment as ended
-        const updatedSegment = { ...currentStorySegment, is_end: true, choices: [] };
+        const updatedSegment = { ...currentStorySegment, is_end: true, choices: [] as string[] };
         setCurrentStorySegment(updatedSegment);
         setAllStorySegments(prev => prev.map(seg => 
           seg.id === currentStorySegment.id ? updatedSegment : seg

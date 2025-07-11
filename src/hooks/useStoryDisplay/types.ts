@@ -1,11 +1,16 @@
 
 export interface StorySegment {
   id: string;
+  storyId: string;
+  text: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  choices: string[];
+  isEnd: boolean;
   story_id: string;
   segment_text: string;
   image_url?: string;
   audio_url?: string;
-  choices: string[];
   is_end: boolean;
   image_generation_status: string;
   audio_generation_status: string;

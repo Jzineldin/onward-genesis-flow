@@ -7,7 +7,7 @@ import { Globe, BookOpen, Sparkles, Star, Users, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const fetchPublicStories = async () => {
+const fetchPublicStories = async (): Promise<Story[]> => {
   const { data, error } = await supabase
     .from('stories')
     .select('id, title, created_at, published_at, is_public, is_completed, thumbnail_url, segment_count, story_mode, full_story_audio_url, audio_generation_status, shotstack_status, shotstack_video_url, user_id')
@@ -18,7 +18,13 @@ const fetchPublicStories = async () => {
   if (error) {
     throw new Error(error.message);
   }
-  return data;
+  
+  // Map the database results to properly typed Story objects
+  return data.map(story => ({
+    ...story,
+    audio_generation_status: story.audio_generation_status as 'not_started' | 'in_progress' | 'completed' | 'failed',
+    shotstack_status: story.shotstack_status as 'not_started' | 'submitted' | 'queued' | 'rendering' | 'saving' | 'done' | 'failed' | undefined
+  }));
 };
 
 const PublicStories = () => {

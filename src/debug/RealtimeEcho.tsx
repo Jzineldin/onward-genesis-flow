@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-export default function RealtimeEcho() {
+export default function RealtimeEcho(): null {
   useEffect(() => {
     const channel = supabase
       .channel('debug-echo')

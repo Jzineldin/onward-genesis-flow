@@ -35,12 +35,17 @@ export const useStoryLoader = () => {
       if (error) throw error;
 
       if (segments && segments.length > 0) {
-        // Ensure all segments have the required fields with proper defaults
-        const enhancedSegments = segments.map(segment => ({
+        // Map database segments to TypeScript interface
+        const enhancedSegments: StorySegment[] = segments.map(segment => ({
           ...segment,
+          storyId: segment.story_id,
+          text: segment.segment_text,
+          imageUrl: segment.image_url || '',
+          audioUrl: segment.audio_url || undefined,
+          isEnd: segment.is_end,
           audio_generation_status: segment.audio_generation_status || 'not_started',
           word_count: segment.word_count || segment.segment_text?.split(/\s+/).length || 0
-        })) as StorySegment[];
+        }));
         
         setAllStorySegments(enhancedSegments);
         setCurrentStorySegment(enhancedSegments[enhancedSegments.length - 1]);

@@ -25,9 +25,27 @@ export const useStoryDisplay = () => {
     addToHistory
   } = useStoryState();
 
+  // Adapter to convert between StorySegment types
+  const adaptedAddToHistory = (segment: import('./useStoryDisplay/types').StorySegment) => {
+    const aiSegment: import('@/types/ai').StorySegment = {
+      id: segment.id,
+      storyId: segment.storyId,
+      text: segment.text,
+      imageUrl: segment.imageUrl || '',
+      audioUrl: segment.audioUrl,
+      choices: segment.choices,
+      isEnd: segment.isEnd,
+      parentSegmentId: undefined,
+      triggeringChoiceText: segment.triggering_choice_text || undefined,
+      imagePrompt: undefined,
+      generationMetadata: undefined
+    };
+    addToHistory(aiSegment);
+  };
+
   const { confirmGeneration, handleFinishStory } = useStoryActions(
     storyGeneration,
-    addToHistory,
+    adaptedAddToHistory,
     incrementApiUsage
   );
 

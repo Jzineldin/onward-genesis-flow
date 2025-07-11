@@ -42,19 +42,24 @@ const StoryEndSection: React.FC<StoryEndSectionProps> = ({
 
   // Transform the segments to match StorySegment interface
   const transformedSegments: StorySegment[] = storySegments.map(segment => ({
-    id: segment.id,
+    ...segment,
+    storyId: storyId,
+    text: segment.segment_text,
+    imageUrl: segment.image_url || '',
+    audioUrl: undefined,
+    isEnd: false,
+    choices: [],
     story_id: storyId,
     segment_text: segment.segment_text,
-    image_url: segment.image_url,
-    triggering_choice_text: segment.triggering_choice_text,
-    created_at: segment.created_at,
-    choices: [],
+    image_url: segment.image_url || '',
+    audio_url: undefined,
     is_end: false,
     image_generation_status: 'completed',
     audio_generation_status: 'not_started',
-    audio_url: undefined,
+    created_at: segment.created_at,
     word_count: segment.segment_text?.split(/\s+/).length || 0,
-    audio_duration: undefined
+    audio_duration: undefined,
+    triggering_choice_text: segment.triggering_choice_text || null
   }));
 
   if (isEnd) {
