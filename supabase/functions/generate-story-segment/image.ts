@@ -110,11 +110,6 @@ async function callImageProvider(provider: string, prompt: string, settings: any
     }
 }
 
-// Legacy function for backward compatibility
-export async function generateImageWithFallback(prompt: string, visualContext?: any): Promise<Blob | null> {
-  // For now, default to OpenAI until all calling code is updated
-  return await generateImageWithOpenAI(prompt, visualContext);
-}
 
 export async function uploadImageToStorage(imageBlob: Blob, client: SupabaseClient): Promise<string> {
   const filePath = `story_image_${Date.now()}.png`;

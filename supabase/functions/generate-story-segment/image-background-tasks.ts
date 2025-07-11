@@ -1,4 +1,4 @@
-import { generateImageWithFallback, uploadImageToStorage } from "./image.ts";
+import { generateImage, uploadImageToStorage } from "./image.ts";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export async function processImageGeneration(
@@ -37,8 +37,8 @@ export async function processImageGeneration(
     console.log('🚀 Generating image with DALL-E-3...');
     const startTime = Date.now();
     
-    // Generate image using DALL-E-3
-    const imageBlob = await generateImageWithFallback(imagePrompt, visualContext);
+    // Generate image using dynamic provider selection
+    const imageBlob = await generateImage(imagePrompt, supabaseAdmin);
     
     const generationTime = Date.now() - startTime;
     console.log(`⏱️ Image generation took: ${generationTime}ms`);
