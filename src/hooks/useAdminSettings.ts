@@ -50,7 +50,6 @@ export interface ProviderSettings {
     ovhSettings: {
       model: string;
       negative_prompt: string;
-      steps: number;
     };
   };
   ttsProviders: {
@@ -107,7 +106,6 @@ const defaultSettings: ProviderSettings = {
     ovhSettings: {
       model: 'sdxl',
       negative_prompt: 'Ugly, blurry, low quality',
-      steps: 20,
     },
   },
   ttsProviders: {
