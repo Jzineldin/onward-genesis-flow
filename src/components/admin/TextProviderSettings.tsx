@@ -19,6 +19,11 @@ interface TextProviderSettings {
     model: string;
     temperature: number;
   };
+  ovhSettings: {
+    model: string;
+    temperature: number;
+    max_tokens: number;
+  };
 }
 
 interface TextProviderSettingsProps {
@@ -50,6 +55,7 @@ const TextProviderSettings: React.FC<TextProviderSettingsProps> = ({ settings, o
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ovh">OVH Qwen2.5 (Recommended)</SelectItem>
                 <SelectItem value="gemini">Google Gemini</SelectItem>
                 <SelectItem value="openai">OpenAI</SelectItem>
               </SelectContent>
@@ -67,6 +73,7 @@ const TextProviderSettings: React.FC<TextProviderSettingsProps> = ({ settings, o
               <SelectContent>
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="gemini">Google Gemini</SelectItem>
+                <SelectItem value="ovh">OVH Qwen2.5</SelectItem>
                 <SelectItem value="mock">Mock Service</SelectItem>
               </SelectContent>
             </Select>
@@ -140,7 +147,62 @@ const TextProviderSettings: React.FC<TextProviderSettingsProps> = ({ settings, o
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white">OpenAI Settings</h3>
+          <h3 className="text-lg font-semibold text-white">OVH Qwen2.5 Settings</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label className="text-white">Model</Label>
+              <Select
+                value={settings.ovhSettings.model}
+                onValueChange={(value) => onUpdate('ovhSettings', {
+                  ...settings.ovhSettings,
+                  model: value
+                })}
+              >
+                <SelectTrigger className="bg-slate-700 border-purple-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="qwen2.5-coder-32b-instruct">Qwen2.5 Coder 32B</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-white">Temperature</Label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                max="2"
+                value={settings.ovhSettings.temperature}
+                onChange={(e) => onUpdate('ovhSettings', {
+                  ...settings.ovhSettings,
+                  temperature: parseFloat(e.target.value) || 0.7
+                })}
+                className="bg-slate-700 border-purple-600 text-white"
+              />
+            </div>
+            <div>
+              <Label className="text-white">Max Tokens</Label>
+              <Input
+                type="number"
+                min="500"
+                max="2000"
+                value={settings.ovhSettings.max_tokens}
+                onChange={(e) => onUpdate('ovhSettings', {
+                  ...settings.ovhSettings,
+                  max_tokens: parseInt(e.target.value) || 1500
+                })}
+                className="bg-slate-700 border-purple-600 text-white"
+              />
+            </div>
+          </div>
+          <p className="text-purple-200 text-sm">
+            🚀 OVH Qwen2.5 offers enhanced reasoning capabilities and educational content generation at 60-70% cost savings vs OpenAI.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-white">OpenAI Settings (Fallback)</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-white">Model</Label>

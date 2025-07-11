@@ -14,6 +14,11 @@ export interface GenerationSettings {
       model: string;
       temperature: number;
     };
+    ovhSettings: {
+      model: string;
+      temperature: number;
+      max_tokens: number;
+    };
   };
   imageProviders: {
     primary: string;
@@ -55,7 +60,7 @@ export interface GenerationSettings {
 
 const defaultSettings: GenerationSettings = {
   textProviders: {
-    primary: 'gemini',
+    primary: 'ovh',  // Changed default to OVH Qwen2.5
     fallback: 'openai',
     wordCount: { min: 120, max: 200 },
     geminiSettings: {
@@ -65,6 +70,11 @@ const defaultSettings: GenerationSettings = {
     openaiSettings: {
       model: 'gpt-4o-mini',
       temperature: 0.7,
+    },
+    ovhSettings: {
+      model: 'qwen2.5-coder-32b-instruct',
+      temperature: 0.7,
+      max_tokens: 1500,
     },
   },
   imageProviders: {
