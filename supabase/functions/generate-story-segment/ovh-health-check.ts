@@ -14,7 +14,7 @@ export async function checkOVHHealth(): Promise<{
     responseTime?: number;
   };
 }> {
-  const OVH_API_TOKEN = Deno.env.get('OVH_API_TOKEN');
+  const OVH_API_TOKEN = Deno.env.get('OVH_AI_ENDPOINTS_ACCESS_TOKEN');
   
   const result = {
     isHealthy: false,
@@ -28,28 +28,27 @@ export async function checkOVHHealth(): Promise<{
   if (!OVH_API_TOKEN) {
     return {
       ...result,
-      error: 'OVH API token not configured'
+      error: 'OVH_AI_ENDPOINTS_ACCESS_TOKEN not configured'
     };
   }
   
   try {
     const startTime = Date.now();
     
-    // Test basic connectivity with a minimal request
-    const response = await fetch('https://qwen2-5-coder-32b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/text_generation', {
+    // Test basic connectivity with a minimal request using OpenAI-compatible endpoint
+    const response = await fetch('https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OVH_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        inputs: 'Test connectivity',
-        parameters: {
-          max_new_tokens: 10,
-          temperature: 0.1,
-          return_full_text: false
-        }
+        model: 'Qwen2.5-Coder-32B-Instruct',
+        messages: [
+          { role: 'user', content: 'Test connectivity' }
+        ],
+        max_tokens: 10,
+        temperature: 0.1
       })
     });
     
@@ -61,7 +60,7 @@ export async function checkOVHHealth(): Promise<{
       result.details.authenticationValid = false;
       return {
         ...result,
-        error: 'OVH API authentication failed - invalid token'
+        error: 'OVH API authentication failed - invalid OVH_AI_ENDPOINTS_ACCESS_TOKEN'
       };
     }
     

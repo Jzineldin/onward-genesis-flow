@@ -8,9 +8,9 @@ const corsHeaders = {
 
 // OVH Image Generation Service
 async function generateImageWithOVH(prompt: string, settings?: any): Promise<Blob | null> {
-    const OVH_API_TOKEN = Deno.env.get('OVH_API_TOKEN');
+    const OVH_API_TOKEN = Deno.env.get('OVH_AI_ENDPOINTS_ACCESS_TOKEN');
     if (!OVH_API_TOKEN) {
-        console.error('🔑 OVH_API_TOKEN is not set. Please configure it in Supabase Edge Functions secrets.');
+        console.error('🔑 OVH_AI_ENDPOINTS_ACCESS_TOKEN is not set. Please configure it in Supabase Edge Functions secrets.');
         return null;
     }
 

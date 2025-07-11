@@ -6,11 +6,11 @@
  */
 
 export interface OVHTextRequest {
-  model: 'qwen2.5-coder-32b-instruct';
+  model: string;
   messages: Array<{role: string; content: string}>;
   max_tokens: number;
   temperature: number;
-  stream?: boolean;
+  response_format?: { type: string };
 }
 
 export interface OVHTextResponse {
@@ -32,7 +32,7 @@ export async function generateStoryWithQwen(
   storyMode?: string,
   supabaseClient?: any
 ): Promise<any> {
-  const OVH_API_TOKEN = Deno.env.get('OVH_API_TOKEN');
+  const OVH_API_TOKEN = Deno.env.get('OVH_AI_ENDPOINTS_ACCESS_TOKEN');
   
   console.log('🔍 OVH API Diagnostics:');
   console.log(`- Token available: ${OVH_API_TOKEN ? 'Yes' : 'No'}`);
@@ -40,17 +40,11 @@ export async function generateStoryWithQwen(
   console.log(`- Token prefix: ${OVH_API_TOKEN ? OVH_API_TOKEN.substring(0, 8) + '...' : 'N/A'}`);
   
   if (!OVH_API_TOKEN) {
-    console.error('❌ OVH_API_TOKEN not found in environment variables');
-    throw new Error('OVH API token not available - check Supabase secrets configuration');
+    console.error('❌ OVH_AI_ENDPOINTS_ACCESS_TOKEN not found in environment variables');
+    throw new Error('OVH_AI_ENDPOINTS_ACCESS_TOKEN not available - check Supabase secrets configuration');
   }
 
   console.log('🤖 Generating story with OVH Qwen2.5-Coder-32B-Instruct...');
-
-  // Build enhanced context for Qwen2.5's superior reasoning
-  let contextPrompt = '';
-  if (narrativeContext?.previousSegments) {
-    contextPrompt = '\n\nPREVIOUS STORY CONTEXT:\n' + narrativeContext.previousSegments;
-  }
 
   // Enhanced visual context for consistency
   let visualContextPrompt = '';
@@ -113,38 +107,40 @@ Response format (EXACT JSON):
   "readingLevel": "beginner|intermediate|advanced"
 }`;
 
+  // Build context from narrative context
+  let contextPrompt = '';
+  if (narrativeContext?.previousSegments) {
+    contextPrompt = '\n\nPREVIOUS STORY CONTEXT:\n' + narrativeContext.previousSegments;
+  }
+
   const userPrompt = initialPrompt 
     ? `Start a new educational ${storyMode || 'fantasy'} story: "${initialPrompt}"`
     : `Continue the educational story. User chose: "${choiceText}"${contextPrompt}${visualContextPrompt}${narrativeContextPrompt}`;
 
   try {
-    const requestBody = {
-      inputs: `${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`,
-      parameters: {
-        max_new_tokens: 1500,
-        temperature: 0.7,
-        top_p: 0.9,
-        repetition_penalty: 1.1,
-        return_full_text: false
-      }
-    };
-    
     console.log('📡 OVH API Request Details:');
-    console.log(`- URL: https://qwen2-5-coder-32b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/text_generation`);
+    console.log(`- URL: https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions`);
     console.log(`- Method: POST`);
     console.log(`- Auth header length: ${OVH_API_TOKEN.length + 7} chars (Bearer + token)`);
-    console.log(`- Request body size: ${JSON.stringify(requestBody).length} chars`);
-    console.log(`- Input prompt length: ${requestBody.inputs.length} chars`);
+    console.log(`- User prompt length: ${userPrompt.length} chars`);
     
-    // Use OVHcloud AI Endpoints for text generation
-    const response = await fetch('https://qwen2-5-coder-32b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/text_generation', {
+    // Use OVHcloud AI Endpoints with OpenAI-compatible format
+    const response = await fetch('https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OVH_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({
+        model: 'Qwen2.5-Coder-32B-Instruct',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+        response_format: { type: "json_object" }
+      })
     });
 
     console.log(`📊 OVH API Response Status: ${response.status} ${response.statusText}`);
@@ -157,8 +153,8 @@ Response format (EXACT JSON):
       
       // Handle specific error codes
       if (response.status === 401) {
-        console.error('🔐 Authentication failed - check OVH API token validity');
-        throw new Error('OVH authentication failed - invalid API token');
+        console.error('🔐 Authentication failed - check OVH_AI_ENDPOINTS_ACCESS_TOKEN validity');
+        throw new Error('OVH authentication failed - invalid OVH_AI_ENDPOINTS_ACCESS_TOKEN');
       } else if (response.status === 429) {
         console.error('⚠️ OVH Rate Limit Exceeded: You have exceeded the rate limit for OVHcloud AI Endpoints.');
         console.error('📊 Rate limits: Anonymous (2 req/min), Authenticated (400 req/min per project)');
@@ -174,20 +170,21 @@ Response format (EXACT JSON):
 
     const data = await response.json();
     console.log('🔍 OVH Qwen2.5 raw response structure:', {
-      hasGeneratedText: !!data.generated_text,
-      isArray: Array.isArray(data),
-      keys: Object.keys(data || {}),
-      firstElementKeys: Array.isArray(data) && data[0] ? Object.keys(data[0]) : 'N/A'
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length || 0,
+      hasContent: !!(data.choices && data.choices[0]?.message?.content),
+      keys: Object.keys(data || {})
     });
     console.log('📄 OVH Qwen2.5 raw response (first 500 chars):', JSON.stringify(data).substring(0, 500) + '...');
     
-    // Extract generated text from OVH response format
-    const generatedText = data.generated_text || data[0]?.generated_text || '';
-    
-    if (!generatedText) {
+    // Extract generated text from OpenAI-compatible response format
+    let generatedText: string;
+    if (data.choices && data.choices[0]?.message?.content) {
+      generatedText = data.choices[0].message.content;
+    } else {
       console.error('❌ No generated text found in OVH response');
       console.error('📄 Full response structure:', JSON.stringify(data, null, 2));
-      throw new Error('OVH Qwen2.5 returned empty response - check API format');
+      throw new Error('OVH Qwen2.5 returned unexpected response format - expected OpenAI-compatible format');
     }
     
     console.log(`📝 Generated text length: ${generatedText.length} chars`);
@@ -196,22 +193,27 @@ Response format (EXACT JSON):
     // Parse JSON from the generated text
     let parsedResponse;
     try {
-      // Try to extract JSON from the response
-      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsedResponse = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No JSON found in response');
-      }
+      parsedResponse = JSON.parse(generatedText);
     } catch (parseError) {
       console.error('❌ Failed to parse JSON from OVH response:', parseError);
       console.error('📄 Raw response:', generatedText);
-      throw new Error('Failed to parse OVH response as JSON');
+      
+      // Try to extract JSON from the response if it's wrapped in other text
+      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } catch (extractError) {
+          throw new Error('Failed to parse OVH response as JSON even after extraction');
+        }
+      } else {
+        throw new Error('No JSON found in OVH response');
+      }
     }
     
     // Validate required fields
     if (!parsedResponse.segmentText || !parsedResponse.choices) {
-      throw new Error('OVH response missing required fields');
+      throw new Error('OVH response missing required fields (segmentText, choices)');
     }
     
     console.log('✅ OVH Qwen2.5 story generation successful');
