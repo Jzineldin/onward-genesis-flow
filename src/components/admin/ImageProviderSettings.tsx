@@ -34,7 +34,6 @@ interface ImageProviderSettings {
   ovhSettings: {
     model: string;
     negative_prompt: string;
-    steps: number;
   };
 }
 
@@ -276,7 +275,7 @@ const ImageProviderSettings: React.FC<ImageProviderSettingsProps> = ({ settings,
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-white">OVHcloud Settings</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <Label className="text-white">Model</Label>
               <Select
@@ -291,23 +290,8 @@ const ImageProviderSettings: React.FC<ImageProviderSettingsProps> = ({ settings,
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="sdxl">Stable Diffusion XL</SelectItem>
-                  <SelectItem value="sdxl-turbo">SDXL Turbo (Faster)</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label className="text-white">Steps</Label>
-              <Input
-                type="number"
-                value={settings.ovhSettings?.steps || 20}
-                onChange={(e) => onUpdate('ovhSettings', {
-                  ...settings.ovhSettings,
-                  steps: parseInt(e.target.value) || 20
-                })}
-                className="bg-slate-700 border-purple-600 text-white"
-                min="1"
-                max="50"
-              />
             </div>
           </div>
           <div>

@@ -12,9 +12,8 @@ export async function generateImageWithOVH(prompt: string, settings?: any): Prom
     
     // Use settings if provided, otherwise use defaults
     const negativePrompt = settings?.negative_prompt || 'Ugly, blurry, low quality, deformed, distorted';
-    const steps = settings?.steps || 20;
     
-    console.log(`⚙️ Using settings - Steps: ${steps}, Negative prompt: "${negativePrompt}"`);
+    console.log(`⚙️ Using settings - Negative prompt: "${negativePrompt}"`);
     
     try {
         const response = await fetch(IMAGE_GENERATION_URL, {
@@ -26,8 +25,7 @@ export async function generateImageWithOVH(prompt: string, settings?: any): Prom
             },
             body: JSON.stringify({ 
                 prompt: prompt, 
-                negative_prompt: negativePrompt,
-                num_inference_steps: steps
+                negative_prompt: negativePrompt
             }),
         });
 
