@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, ArrowLeft, Sparkles, Home } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Wand2, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CreatePrompt: React.FC = () => {
@@ -149,7 +149,7 @@ const CreatePrompt: React.FC = () => {
           <Card className="!bg-slate-800/70 !border-2 !border-amber-500/40 !backdrop-blur-md !shadow-2xl !shadow-amber-500/10">
             <CardHeader>
               <CardTitle className="!text-white !text-xl font-serif !drop-shadow-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-amber-400" />
+                <Wand2 className="h-5 w-5 text-amber-400" />
                 Your Story Beginning
               </CardTitle>
               <CardDescription className="!text-amber-200/90 !font-medium">
@@ -170,9 +170,9 @@ const CreatePrompt: React.FC = () => {
         {/* Story Suggestions */}
         <div className="max-w-4xl mx-auto mb-12">
           <h3 className="text-2xl font-bold !text-white mb-6 text-center font-serif drop-shadow-lg flex items-center justify-center gap-2">
-            <Sparkles className="h-6 w-6 text-amber-400" />
+            <div className="h-1.5 w-1.5 bg-amber-400 rounded-full animate-pulse"></div>
             Need Inspiration?
-            <Sparkles className="h-6 w-6 text-amber-400" />
+            <div className="h-1.5 w-1.5 bg-amber-400 rounded-full animate-pulse"></div>
           </h3>
           <div className="grid gap-4">
             {genrePrompts[selectedGenre]?.map((suggestion, index) => (
@@ -202,7 +202,7 @@ const CreatePrompt: React.FC = () => {
             disabled={!prompt.trim()}
             className="!bg-gradient-to-r !from-amber-500 !to-orange-500 hover:!from-amber-600 hover:!to-orange-600 !text-white px-12 py-4 text-xl font-medium disabled:!opacity-50 disabled:!cursor-not-allowed !shadow-lg !shadow-amber-500/30 hover:!shadow-xl hover:!shadow-amber-500/40 !transition-all !duration-300 hover:!scale-105"
           >
-            <Sparkles className="mr-2 h-5 w-5" />
+            <Wand2 className="mr-2 h-5 w-5" />
             Begin My {genreDisplayNames[selectedGenre].split(' ').slice(1).join(' ')} Adventure
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, ImageIcon, Flag } from 'lucide-react';
+import { Wand2, ImageIcon, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StoryContent from '@/components/story-viewer/StoryContent';
 import StoryLoadingState from '@/components/story-viewer/StoryLoadingState';
@@ -68,7 +68,7 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({
       <Card className={`${cardClass} bg-slate-900/95 border-amber-500/30 backdrop-blur-sm shadow-2xl`}>
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-white text-2xl font-serif flex items-center justify-center gap-2">
-            <Sparkles className="h-6 w-6 text-amber-400" />
+            <Wand2 className="h-6 w-6 text-amber-400" />
             {storySegment.isEnd ? "Story Complete!" : "Your Story Continues"}
           </CardTitle>
         </CardHeader>

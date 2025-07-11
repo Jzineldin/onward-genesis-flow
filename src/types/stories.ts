@@ -31,6 +31,7 @@ export interface Story {
   shotstack_render_id?: string | null;
   shotstack_video_url?: string | null;
   shotstack_status?: 'not_started' | 'submitted' | 'queued' | 'rendering' | 'saving' | 'done' | 'failed';
+  user_id?: string;
 }
 
 // Combines the Story with its segments, typically for detailed views

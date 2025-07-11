@@ -1,17 +1,18 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AudioControls from '@/components/audio/AudioControls';
 import AudioProgress from '@/components/audio/AudioProgress';
 import AudioDebugger from '@/components/audio/AudioDebugger';
 import { createAudioEventHandlers } from '@/components/audio/AudioStateManager';
+import { debug, performance } from '@/utils/secureLogger';
 
 interface AudioPlayerProps {
   src: string;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ src }) => {
+const AudioPlayer: React.FC<AudioPlayerProps> = React.memo(({ src }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -23,15 +24,15 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src }) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    console.log('🎵 AudioPlayer useEffect triggered with src:', src);
+    debug('AudioPlayer useEffect triggered', { src }, 'AudioPlayer');
     
     const audio = audioRef.current;
     if (!audio) {
-      console.log('🎵 AudioPlayer: No audio ref available');
+      debug('AudioPlayer: No audio ref available', undefined, 'AudioPlayer');
       return;
     }
 
-    console.log('🎵 AudioPlayer: Starting loading process');
+    debug('AudioPlayer: Starting loading process', undefined, 'AudioPlayer');
     setIsLoading(true);
     setHasError(false);
     setErrorMessage('');
@@ -219,6 +220,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src }) => {
       )}
     </>
   );
-};
+});
+
+// Display name for debugging
+AudioPlayer.displayName = 'AudioPlayer';
 
 export default AudioPlayer;

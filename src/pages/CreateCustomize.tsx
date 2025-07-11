@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Sparkles, User } from 'lucide-react';
+import { ArrowLeft, Wand2, User } from 'lucide-react';
 
 const CreateCustomize: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -100,7 +100,7 @@ const CreateCustomize: React.FC = () => {
           <Card className="bg-slate-800/90 border-slate-600 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-amber-400" />
+                <Wand2 className="h-5 w-5 text-amber-400" />
                 Story Prompt
               </CardTitle>
             </CardHeader>
@@ -218,7 +218,7 @@ const CreateCustomize: React.FC = () => {
             disabled={!prompt.trim()}
             className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-12 py-4 text-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Sparkles className="mr-2 h-6 w-6" />
+            <Wand2 className="mr-2 h-6 w-6" />
             Start Your Journey
           </Button>
         </div>

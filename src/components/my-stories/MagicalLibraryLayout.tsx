@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Story } from '@/types/stories';
 import { MagicalStoryCard } from './MagicalStoryCard';
-import { RefreshCw, BookOpen, Plus } from 'lucide-react';
+import { RefreshCw, BookOpen, Plus, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { batchUpdateStoryThumbnails } from '@/utils/storyCoverUtils';
 
 interface MagicalLibraryLayoutProps {
   stories: Story[];
@@ -21,9 +22,24 @@ export const MagicalLibraryLayout: React.FC<MagicalLibraryLayoutProps> = ({
   isLoading = false,
   showRefresh = false
 }) => {
+  const [isUpdatingThumbnails, setIsUpdatingThumbnails] = useState(false);
+  
   // Group stories by completion status
   const completedStories = stories.filter(story => story.is_completed);
   const inProgressStories = stories.filter(story => !story.is_completed);
+
+  const handleUpdateThumbnails = async () => {
+    setIsUpdatingThumbnails(true);
+    try {
+      await batchUpdateStoryThumbnails();
+      // Refresh the stories list to show updated thumbnails
+      if (onRefresh) {
+        onRefresh();
+      }
+    } finally {
+      setIsUpdatingThumbnails(false);
+    }
+  };
 
   const renderStoryGroup = (groupStories: Story[], title: string, groupClass: string, startIndex: number) => {
     if (groupStories.length === 0) return null;
@@ -115,6 +131,17 @@ export const MagicalLibraryLayout: React.FC<MagicalLibraryLayoutProps> = ({
                   Refresh Collection
                 </Button>
               )}
+              
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={handleUpdateThumbnails} 
+                disabled={isUpdatingThumbnails}
+                className="bg-purple-900/40 border-purple-400/50 text-purple-200 hover:bg-purple-800/50 backdrop-blur-sm shadow-lg"
+              >
+                <ImageIcon className={`h-5 w-5 mr-2 ${isUpdatingThumbnails ? 'animate-pulse' : ''}`} />
+                {isUpdatingThumbnails ? 'Updating Covers...' : 'Fix Story Covers'}
+              </Button>
               
               <Link to="/">
                 <Button className="bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500 text-white shadow-xl border-2 border-amber-400/60 text-lg px-6 py-3">

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
@@ -11,10 +10,12 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { User, Settings, BookOpen, LogOut } from 'lucide-react';
+import { User, Settings, BookOpen, LogOut, Shield } from 'lucide-react';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
+  const { hasAccess } = useAdminAccess();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -72,6 +73,14 @@ const UserMenu = () => {
             Settings
           </Link>
         </DropdownMenuItem>
+        {hasAccess && (
+          <DropdownMenuItem asChild>
+            <Link to="/admin" className="flex items-center">
+              <Shield className="mr-2 h-4 w-4" />
+              Admin Panel
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="flex items-center">
           <LogOut className="mr-2 h-4 w-4" />

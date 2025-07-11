@@ -4,6 +4,7 @@ import { useUnifiedStory } from '@/hooks/useUnifiedStory';
 import { useStoryDatabase } from '@/hooks/story-game/useStoryDatabase';
 import { StorySegmentRow } from '@/types/stories';
 import { toast } from 'sonner';
+import { AIProviderErrorHandler, AIProviderType, logStoryGenerationError } from '@/utils/aiProviderErrorHandler';
 
 export const useUnifiedStoryGame = () => {
   const [gameState, setGameState] = useState<'not_started' | 'playing' | 'completed'>('not_started');
@@ -34,11 +35,19 @@ export const useUnifiedStoryGame = () => {
   }, []);
 
   const handleGenerationError = useCallback((error: Error) => {
-    console.error('❌ Story generation failed:', error);
+    // Use standardized AI provider error handling
+    const providerError = AIProviderErrorHandler.handleProviderError(
+      AIProviderType.OPENAI_GPT,
+      'text-generation',
+      error
+    );
+
+    logStoryGenerationError('text', error, { gameState, currentSegment: !!currentSegment });
+    
     setIsLoading(false);
-    setError(error.message);
-    toast.error(`Story generation failed: ${error.message}`);
-  }, []);
+    setError(providerError.userMessage);
+    toast.error(providerError.userMessage);
+  }, [gameState, currentSegment]);
 
   const { mutation } = useUnifiedStory({
     onSuccess: handleSuccessfulGeneration,

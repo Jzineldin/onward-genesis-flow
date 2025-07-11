@@ -1,4 +1,3 @@
-
 import { generateImageWithFallback, uploadImageToStorage } from "./image.ts";
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -73,6 +72,28 @@ export async function processImageGeneration(
     if (updateError) {
       console.error('❌ Failed to update segment with image URL:', updateError);
       return;
+    }
+
+    // Check if this is the first segment and update story thumbnail if needed
+    console.log('🎯 Checking if this is the first segment to update story thumbnail...');
+    const { data: segmentData, error: segmentError } = await supabaseAdmin
+      .from('story_segments')
+      .select('parent_segment_id, story_id')
+      .eq('id', segmentId)
+      .single();
+
+    if (!segmentError && segmentData && segmentData.parent_segment_id === null) {
+      console.log('📸 This is the first segment, updating story thumbnail...');
+      const { error: thumbnailError } = await supabaseAdmin
+        .from('stories')
+        .update({ thumbnail_url: imageUrl })
+        .eq('id', segmentData.story_id);
+
+      if (thumbnailError) {
+        console.error('❌ Failed to update story thumbnail:', thumbnailError);
+      } else {
+        console.log('✅ Story thumbnail updated successfully');
+      }
     }
 
     const totalTime = Date.now() - startTime;

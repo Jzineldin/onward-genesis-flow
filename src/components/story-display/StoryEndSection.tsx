@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { Flag, Sparkles } from 'lucide-react';
+import { Flag, Crown } from 'lucide-react';
 import VoiceSelectionDialog from './VoiceSelectionDialog';
 import EnhancedAudioPlayer from './EnhancedAudioPlayer';
 import StorySegmentsDisplay from './StorySegmentsDisplay';
@@ -64,7 +64,7 @@ const StoryEndSection: React.FC<StoryEndSectionProps> = ({
         <Card className="bg-gradient-to-r from-amber-500/20 to-purple-500/20 border-amber-500/30 text-center">
           <CardHeader>
             <CardTitle className="text-3xl font-serif text-amber-300 flex items-center justify-center gap-2">
-              <Sparkles className="h-8 w-8" />
+              <Crown className="h-8 w-8" />
               Story Complete!
             </CardTitle>
           </CardHeader>

@@ -1,6 +1,8 @@
 
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { StorySegmentRealtimePayload, StoryRealtimePayload } from '@/types/ai';
+import { realtime, performance } from '@/utils/secureLogger';
 
 export const useRealtimeHandlers = (
     storyId: string,
@@ -9,9 +11,8 @@ export const useRealtimeHandlers = (
 ) => {
     const queryClient = useQueryClient();
 
-    const handleRealtimeUpdate = useCallback((payload: any) => {
-        console.log('[DBG] WS payload', payload); // ← DEBUG LOG
-        console.log('🔥 payload', payload.new?.id, payload.new?.image_url);
+    const handleRealtimeUpdate = useCallback((payload: StorySegmentRealtimePayload) => {
+        realtime('WebSocket payload received', { segmentId: payload.new?.id, hasImageUrl: !!payload.new?.image_url });
         
         // Guard against empty image URLs
         if (!payload.new?.image_url) return;
@@ -21,11 +22,11 @@ export const useRealtimeHandlers = (
         
         // Get current cached data to compare URLs
         const currentData = queryClient.getQueryData(['segment', segmentId]);
-        const currentImageUrl = (currentData as any)?.image_url;
+        const currentImageUrl = currentData ? (currentData as any)?.image_url : undefined;
         
         // Only proceed if the image URL has actually changed
         if (payload.new.image_url !== currentImageUrl) {
-            console.log('🔄 Image URL changed, updating cache directly:', {
+            realtime('Image URL changed, updating cache directly', {
                 segmentId,
                 oldUrl: currentImageUrl,
                 newUrl: payload.new.image_url
@@ -51,40 +52,39 @@ export const useRealtimeHandlers = (
         }
         
         // ENHANCED: Multiple refresh strategy for critical updates
-        if ((payload.new as any)?.image_generation_status === 'completed') {
-            console.log('🖼️ Image generation completed - aggressive refresh strategy');
+        if (payload.new?.image_generation_status === 'completed') {
+            realtime('Image generation completed - aggressive refresh strategy');
             
             // Immediate refresh
             forceRefresh();
             
             // Staggered refreshes to ensure UI updates
             setTimeout(() => {
-                console.log('🔄 Secondary refresh (200ms)');
+                realtime('Secondary refresh (200ms)');
                 queryClient.invalidateQueries({ queryKey: ['story', storyId] });
                 forceRefresh();
             }, 200);
             
             setTimeout(() => {
-                console.log('🔄 Tertiary refresh (500ms)');
+                realtime('Tertiary refresh (500ms)');
                 queryClient.refetchQueries({ queryKey: ['story', storyId] });
                 forceRefresh();
             }, 500);
             
             setTimeout(() => {
-                console.log('🔄 Final refresh (1000ms)');
+                realtime('Final refresh (1000ms)');
                 queryClient.invalidateQueries({ queryKey: ['story', storyId] });
                 queryClient.refetchQueries({ queryKey: ['story', storyId] });
             }, 1000);
         }
     }, [queryClient, storyId, forceRefresh, updateLastUpdateTime]);
 
-    const handleStoryUpdate = useCallback((payload: any) => {
-        console.log('🔥 REALTIME HANDLER - Processing story table update:', {
+    const handleStoryUpdate = useCallback((payload: StoryRealtimePayload) => {
+        realtime('Processing story table update', {
             storyId,
-            audioStatus: (payload.new as any)?.audio_generation_status,
-            audioUrl: (payload.new as any)?.full_story_audio_url ? 'Present' : 'Missing',
-            isCompleted: (payload.new as any)?.is_completed,
-            timestamp: new Date().toISOString()
+            audioStatus: payload.new?.audio_generation_status,
+            audioUrl: payload.new?.full_story_audio_url ? 'Present' : 'Missing',
+            isCompleted: payload.new?.is_completed
         });
         
         updateLastUpdateTime();
@@ -93,8 +93,8 @@ export const useRealtimeHandlers = (
         forceRefresh();
         
         // Additional refresh for audio completion
-        if ((payload.new as any)?.audio_generation_status === 'completed') {
-            console.log('🎵 Audio generation completed - forcing multiple refreshes');
+        if (payload.new?.audio_generation_status === 'completed') {
+            realtime('Audio generation completed - forcing multiple refreshes');
             setTimeout(() => forceRefresh(), 200);
             setTimeout(() => forceRefresh(), 500);
             setTimeout(() => forceRefresh(), 1000);

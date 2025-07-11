@@ -4,6 +4,8 @@ import { useGenerateFullStoryAudio } from '@/hooks/useGenerateFullStoryAudio';
 import { useFinishStoryInline } from './useFinishStoryInline';
 import { StorySegment } from './useStoryState';
 import { supabase } from '@/integrations/supabase/client';
+import { AIProviderErrorHandler, AIProviderType, logStoryGenerationError } from '@/utils/aiProviderErrorHandler';
+import { validateInput, storyGenerationRateLimit } from '@/utils/security';
 
 interface UseStoryActionsProps {
   setError: (error: string | null) => void;
@@ -47,15 +49,25 @@ export const useStoryActions = ({
     }
 
     try {
-      console.log('🎬 Starting story generation with:', { prompt, mode, skipImage });
+      // Validate inputs
+      const validatedPrompt = validateInput.storyPrompt(prompt);
+      const validatedGenre = validateInput.storyGenre(mode);
+      
+      // Check rate limiting
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!storyGenerationRateLimit.isAllowed(user?.id || null, 10, 60000)) {
+        throw new Error('Too many story generation requests. Please wait a moment before trying again.');
+      }
+
+      console.log('🎬 Starting story generation with validated inputs:', { prompt: validatedPrompt, mode: validatedGenre, skipImage });
       setError(null);
       setIsGeneratingStartup(true);
       setShowImageSettings(false);
       setApiCallsCount(prev => prev + 1);
       
       const data = await generateSegment({
-        prompt,
-        genre: mode,
+        prompt: validatedPrompt,
+        genre: validatedGenre,
         skipImage,
         skipAudio: true
       });
@@ -77,12 +89,20 @@ export const useStoryActions = ({
       setIsGeneratingStartup(false);
       toast.success('Story started successfully!');
     } catch (error: any) {
-      console.error('❌ Story generation failed:', error);
-      setError(error.message || 'Failed to generate story');
+      const providerError = AIProviderErrorHandler.handleProviderError(
+        AIProviderType.OPENAI_GPT,
+        'text-generation',
+        error,
+        { prompt, mode, skipImage }
+      );
+
+      logStoryGenerationError('text', error, { prompt, mode, skipImage });
+      
+      setError(providerError.userMessage);
       setIsGeneratingStartup(false);
       setShowImageSettings(true);
       generationStartedRef.current = false;
-      toast.error(`Failed to generate story: ${error.message}`);
+      toast.error(providerError.userMessage);
     }
   };
 
@@ -117,10 +137,18 @@ export const useStoryActions = ({
       setIsGeneratingChoice(false);
       toast.success('Story continued successfully!');
     } catch (error: any) {
-      console.error('❌ Choice selection failed:', error);
-      setError(error.message || 'Failed to continue story');
+      const providerError = AIProviderErrorHandler.handleProviderError(
+        AIProviderType.OPENAI_GPT,
+        'text-generation',
+        error,
+        { choice, currentSegment: !!currentSegment }
+      );
+
+      logStoryGenerationError('choices', error, { choice, currentSegment: !!currentSegment });
+      
+      setError(providerError.userMessage);
       setIsGeneratingChoice(false);
-      toast.error(`Failed to continue story: ${error.message}`);
+      toast.error(providerError.userMessage);
     }
   };
 
@@ -166,9 +194,18 @@ export const useStoryActions = ({
       
       setIsGeneratingEnding(false);
     } catch (error: any) {
-      console.error('❌ Story finishing failed:', error);
-      setError(error.message || 'Failed to generate story ending');
+      const providerError = AIProviderErrorHandler.handleProviderError(
+        AIProviderType.OPENAI_GPT,
+        'text-generation',
+        error,
+        { skipImage, currentSegment: !!currentSegment }
+      );
+
+      logStoryGenerationError('text', error, { skipImage, currentSegment: !!currentSegment });
+      
+      setError(providerError.userMessage);
       setIsGeneratingEnding(false);
+      toast.error(providerError.userMessage);
     }
   };
 
@@ -205,8 +242,16 @@ export const useStoryActions = ({
         toast.success('Audio generated successfully!');
       }
     } catch (error: any) {
-      console.error('🚨 Audio generation failed:', error);
-      toast.error(`Failed to generate audio: ${error.message}`);
+      const providerError = AIProviderErrorHandler.handleProviderError(
+        AIProviderType.OPENAI_TTS,
+        'audio-generation',
+        error,
+        { storyId: currentSegment.storyId, voice: selectedVoice }
+      );
+
+      logStoryGenerationError('audio', error, { storyId: currentSegment.storyId, voice: selectedVoice });
+      
+      toast.error(providerError.userMessage);
     }
   };
 

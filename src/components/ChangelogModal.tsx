@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, Calendar, Zap, Bug, Plus, ArrowRight, Sparkles } from 'lucide-react';
+import { FileText, Calendar, Zap, Bug, Plus, ArrowRight, Wand2 } from 'lucide-react';
 import ChangelogManager from '@/utils/changelogManager';
 
 interface ChangelogEntry {
@@ -53,11 +53,19 @@ const ChangelogModal: React.FC<ChangelogModalProps> = ({ trigger }) => {
 
   useEffect(() => {
     // Load initial changelog
-    setChangelog(ChangelogManager.getCurrentChangelog());
+    const loadedChangelog = ChangelogManager.getCurrentChangelog();
+    // Sort by date (newest first) to ensure proper chronological order
+    const sortedChangelog = [...loadedChangelog].sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+    setChangelog(sortedChangelog);
     
     // Listen for changelog updates
     const handleChangelogUpdate = (event: CustomEvent) => {
-      setChangelog(event.detail);
+      const updatedChangelog = [...event.detail].sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+      setChangelog(updatedChangelog);
     };
     
     window.addEventListener('changelog-updated', handleChangelogUpdate as EventListener);
@@ -69,7 +77,7 @@ const ChangelogModal: React.FC<ChangelogModalProps> = ({ trigger }) => {
 
   const defaultTrigger = (
     <Button variant="ghost" size="sm" className="text-amber-200 hover:text-amber-100 hover:bg-amber-600/20">
-      <Sparkles className="mr-2 h-4 w-4" />
+      <Wand2 className="mr-2 h-4 w-4" />
       What's New
     </Button>
   );

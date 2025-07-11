@@ -82,12 +82,6 @@ const StoryCreateMode: React.FC<StoryCreateModeProps> = ({
             onChapterNavigate={onChapterNavigate}
             onChapterChange={onChapterChange}
           />
-          
-          {/* Add the Unified Audio Player - shows info about future narration */}
-          <UnifiedAudioPlayer 
-            segment={currentStorySegment}
-            onAudioGenerated={handleAudioGenerated}
-          />
         </div>
 
         {showHistory && allStorySegments.length > 0 && (

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Home, BookOpen, Feather, Scroll } from 'lucide-react';
+import { Home, BookOpen, Feather, Scroll, Wand2 } from 'lucide-react';
 import StoryDisplayLayout from '@/components/story-display/StoryDisplayLayout';
 
 interface StoryLoadingStateProps {
@@ -35,16 +35,16 @@ const StoryLoadingState: React.FC<StoryLoadingStateProps> = ({
                 
                 {/* Floating Magical Elements */}
                 <div className="absolute -top-4 -left-4">
-                  <Sparkles className="h-6 w-6 text-purple-400 animate-bounce" style={{ animationDelay: '0s' }} />
+                  <div className="h-3 w-3 bg-purple-400 rounded-full animate-bounce shadow-lg shadow-purple-400/50" style={{ animationDelay: '0s' }}></div>
                 </div>
                 <div className="absolute -top-4 -right-4">
                   <Feather className="h-5 w-5 text-blue-400 animate-bounce" style={{ animationDelay: '0.5s' }} />
                 </div>
                 <div className="absolute -bottom-4 -left-4">
-                  <Sparkles className="h-4 w-4 text-emerald-400 animate-bounce" style={{ animationDelay: '1s' }} />
+                  <div className="h-2 w-2 bg-emerald-400 rounded-full animate-bounce shadow-lg shadow-emerald-400/50" style={{ animationDelay: '1s' }}></div>
                 </div>
                 <div className="absolute -bottom-4 -right-4">
-                  <Sparkles className="h-5 w-5 text-pink-400 animate-bounce" style={{ animationDelay: '1.5s' }} />
+                  <Wand2 className="h-4 w-4 text-pink-400 animate-bounce" style={{ animationDelay: '1.5s' }} />
                 </div>
               </div>
               
@@ -71,7 +71,7 @@ const StoryLoadingState: React.FC<StoryLoadingStateProps> = ({
             {/* API Usage Counter - Styled as Mystical Rune */}
             <div className="bg-slate-800/60 border border-amber-500/30 rounded-lg p-4 mx-auto w-fit">
               <div className="flex items-center gap-2 text-amber-400">
-                <Sparkles className="h-4 w-4" />
+                <Wand2 className="h-4 w-4" />
                 <span className="text-sm font-mono">Spell Invocations: {apiCallsCount}</span>
               </div>
             </div>

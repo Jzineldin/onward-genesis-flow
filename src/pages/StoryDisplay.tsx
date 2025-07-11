@@ -1,5 +1,8 @@
 import React from 'react';
+import { toast } from 'sonner';
 import { CostConfirmationDialog } from '@/components/CostConfirmationDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthProvider';
 
 // Import refactored components
 import StoryHeader from '@/components/story-display/StoryHeader';
@@ -14,6 +17,8 @@ import { useStoryDisplay } from '@/hooks/useStoryDisplay';
 import { useStoryChapterNavigation } from '@/hooks/useStoryDisplay/useStoryChapterNavigation';
 
 const StoryDisplay: React.FC = () => {
+  const { user } = useAuth();
+  
   const {
     // State
     currentStorySegment,
@@ -40,6 +45,7 @@ const StoryDisplay: React.FC = () => {
     genre,
     prompt,
     characterName,
+    id, // Story ID from URL params
     
     // Actions
     setSkipImage,
@@ -88,6 +94,78 @@ const StoryDisplay: React.FC = () => {
     await refreshStoryData();
   };
 
+  // Handle save story functionality
+  const handleSaveStory = async () => {
+    if (!id || !allStorySegments.length) {
+      toast.error('No story to save');
+      return;
+    }
+
+    try {
+      // For authenticated users, check if story already exists in database
+      if (user) {
+        console.log('🔐 Authenticated user saving story:', id);
+        
+        // Check if story exists in database
+        const { data: existingStory, error: checkError } = await supabase
+          .from('stories')
+          .select('id, user_id')
+          .eq('id', id)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+
+        if (existingStory) {
+          // Story exists - update user ownership if needed
+          if (!existingStory.user_id) {
+            const { error: updateError } = await supabase
+              .from('stories')
+              .update({ user_id: user.id })
+              .eq('id', id);
+            
+            if (updateError) throw updateError;
+            toast.success('Story saved to your account! 📖');
+          } else {
+            toast.success('Story is already in your library! 📚');
+          }
+        } else {
+          // Story doesn't exist in database - create it
+          const storyTitle = allStorySegments[0]?.segment_text?.substring(0, 100) + '...' || 'Untitled Story';
+          
+          const { error: createError } = await supabase
+            .from('stories')
+            .insert({
+              id: id,
+              title: storyTitle,
+              user_id: user.id,
+              is_completed: allStorySegments.some(s => s.is_end),
+              segment_count: allStorySegments.length
+            });
+          
+          if (createError) throw createError;
+          toast.success('Story saved to your account! 📖');
+        }
+      } else {
+        // For anonymous users, save to local storage
+        console.log('👤 Anonymous user saving story locally:', id);
+        
+        const existingIds = JSON.parse(localStorage.getItem('anonymous_story_ids') || '[]');
+        if (!existingIds.includes(id)) {
+          existingIds.push(id);
+          localStorage.setItem('anonymous_story_ids', JSON.stringify(existingIds));
+          toast.success('Story saved locally! Sign up to save permanently. 💾');
+        } else {
+          toast.success('Story already saved locally! 📚');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error saving story:', error);
+      toast.error('Failed to save story. Please try again.');
+    }
+  };
+
   // Handle exit without creating new URLs - go to home instead
   const handleExit = () => {
     console.log('🚪 Exiting story, navigating to home');
@@ -128,12 +206,11 @@ const StoryDisplay: React.FC = () => {
   }
 
   return (
-    <StoryDisplayLayout>
-      <StoryHeader 
-        onExit={handleExit}
-        onSave={() => {}}
-        apiUsageCount={apiUsageCount}
-      />
+    <StoryDisplayLayout>        <StoryHeader 
+          onExit={handleExit}
+          onSave={handleSaveStory}
+          apiUsageCount={apiUsageCount}
+        />
 
       {/* Show unified completion interface if story is completed */}
       <StoryCompletionHandler

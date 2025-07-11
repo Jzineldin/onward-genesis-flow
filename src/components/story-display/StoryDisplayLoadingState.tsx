@@ -25,7 +25,9 @@ const StoryDisplayLoadingState: React.FC<StoryDisplayLoadingStateProps> = ({
       <div className="container mx-auto px-4 py-8">
         <StoryHeader 
           onExit={onExit}
-          onSave={() => {}}
+          onSave={() => {
+            console.log('⚠️ Story not loaded yet, cannot save');
+          }}
           apiUsageCount={apiUsageCount}
         />
         <div className="flex items-center justify-center min-h-[60vh]">

@@ -6,7 +6,6 @@ import { useSlideshowAutoAdvance } from './hooks/useSlideshowAutoAdvance';
 import SlideshowHeader from './SlideshowHeader';
 import SlideshowContent from './SlideshowContent';
 import SlideshowNavigation from './SlideshowNavigation';
-import SlideshowAudioPlayer from './SlideshowAudioPlayer';
 
 interface StorySlideshowProps {
   segments: StorySegmentRow[];
@@ -40,6 +39,7 @@ const StorySlideshow: React.FC<StorySlideshowProps> = ({
     currentSlide,
     setCurrentSlide,
     setIsPlaying,
+    fullStoryAudioUrl,
   });
 
   const handleClose = () => {
@@ -53,15 +53,24 @@ const StorySlideshow: React.FC<StorySlideshowProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex flex-col bg-slate-900 story-slideshow-mobile"
+      className="fixed inset-0 z-50 flex flex-col story-slideshow-mobile"
       style={{
         background: `
-          linear-gradient(rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98)),
+          linear-gradient(135deg, 
+            rgba(15, 23, 42, 0.95) 0%, 
+            rgba(30, 41, 59, 0.90) 25%,
+            rgba(51, 65, 85, 0.85) 50%,
+            rgba(71, 85, 105, 0.90) 75%,
+            rgba(15, 23, 42, 0.95) 100%
+          ),
+          radial-gradient(circle at 20% 80%, rgba(251, 191, 36, 0.08) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.08) 0%, transparent 50%),
           url('/images/Flux_Dev_Lonely_astronaut_sitting_on_a_pile_of_books_in_space__0.jpg')
         `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundSize: 'cover, 100% 100%, 100% 100%, cover',
+        backgroundPosition: 'center, center, center, center',
+        backgroundRepeat: 'no-repeat',
+        backgroundBlendMode: 'normal, overlay, overlay, normal'
       }}
     >
       <SlideshowHeader
@@ -85,9 +94,7 @@ const StorySlideshow: React.FC<StorySlideshowProps> = ({
         onGoToSlide={goToSlide}
       />
 
-      {fullStoryAudioUrl && (
-        <SlideshowAudioPlayer fullStoryAudioUrl={fullStoryAudioUrl} />
-      )}
+      {/* Audio is now handled internally by useSlideshowAutoAdvance for better timing sync */}
     </div>
   );
 };

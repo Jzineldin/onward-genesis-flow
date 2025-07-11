@@ -1,46 +1,55 @@
 
 import { useState, useCallback } from 'react';
 import { useStoryGeneration } from './useStoryGeneration';
+import { StorySegment, StoryGenerationRequest } from '@/types/ai';
+import { storyGeneration } from '@/utils/secureLogger';
 
 export const useStoryGame = () => {
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'finished'>('idle');
-  const [storyHistory, setStoryHistory] = useState<any[]>([]);
-  const [currentSegment, setCurrentSegment] = useState<any>(null);
+  const [storyHistory, setStoryHistory] = useState<StorySegment[]>([]);
+  const [currentSegment, setCurrentSegment] = useState<StorySegment | null>(null);
 
   const { generateSegment, isGenerating } = useStoryGeneration();
 
-  const handleStoryGeneration = useCallback(async (options: any) => {
+  const handleStoryGeneration = useCallback(async (options: StoryGenerationRequest) => {
     try {
       const data = await generateSegment(options);
-      console.log('Story generation response:', data);
+      storyGeneration('Story generation response received', { 
+        storyId: data.story_id, 
+        segmentId: data.id,
+        hasChoices: !!data.choices?.length,
+        isEnd: data.is_end 
+      });
       
       // Ensure we include the segment ID in the current segment
-      const segmentData = {
+      const segmentData: StorySegment = {
         id: data.id,
         storyId: data.story_id,
         text: data.segment_text,
         imageUrl: data.image_url || '/placeholder.svg',
         choices: data.choices || [],
         isEnd: data.is_end || false,
-        imageGenerationStatus: data.image_generation_status,
-        segmentId: data.id, // Make sure to include the actual segment ID
         parentSegmentId: data.parent_segment_id,
-        triggeringChoiceText: data.triggering_choice_text
+        triggeringChoiceText: data.triggering_choice_text,
+        imagePrompt: data.image_prompt,
+        generationMetadata: {
+          imageProvider: data.image_generation_status === 'completed' ? 'ovh-ai' : undefined
+        }
       };
 
       setCurrentSegment(segmentData);
       setStoryHistory(prev => [...prev, segmentData]);
       setGameState('playing');
 
-      console.log('Story started successfully');
+      storyGeneration('Story started successfully', { storyId: data.story_id });
     } catch (error) {
-      console.error('Story generation failed:', error);
+      storyGeneration('Story generation failed', { error: error instanceof Error ? error.message : 'Unknown error' });
       setGameState('idle');
     }
   }, [generateSegment]);
 
   const startStory = useCallback((prompt: string, storyMode?: string) => {
-    console.log('Starting story with prompt:', prompt);
+    storyGeneration('Starting story', { prompt: prompt.substring(0, 100), storyMode });
     handleStoryGeneration({ 
       storyId: '', // Will be generated
       prompt, 
@@ -51,7 +60,7 @@ export const useStoryGame = () => {
   const selectChoice = useCallback((choice: string) => {
     if (!currentSegment) return;
     
-    console.log('Selecting choice:', choice);
+    storyGeneration('Selecting choice', { choice, currentSegmentId: currentSegment.id });
     handleStoryGeneration({
       storyId: currentSegment.storyId,
       parentSegmentId: currentSegment.id,
@@ -60,12 +69,12 @@ export const useStoryGame = () => {
   }, [currentSegment, handleStoryGeneration]);
 
   const finishStory = useCallback(() => {
-    console.log('Finishing story');
+    storyGeneration('Finishing story');
     setGameState('finished');
   }, []);
 
   const restartStory = useCallback(() => {
-    console.log('Restarting story');
+    storyGeneration('Restarting story');
     setGameState('idle');
     setStoryHistory([]);
     setCurrentSegment(null);

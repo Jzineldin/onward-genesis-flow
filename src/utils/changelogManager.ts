@@ -27,6 +27,20 @@ class ChangelogManager {
     // Return updated default changelog with latest improvements
     return [
       {
+        version: '2.7.1',
+        date: '2025-07-11',
+        type: 'patch',
+        changes: [
+          { type: 'fix', description: 'Fixed "End Story" button generating 3 additional chapters instead of 1 ending segment - now properly concludes stories with a single final chapter' },
+          { type: 'fix', description: 'Fixed Save button functionality - stories now properly save to user accounts with authentication handling and local storage fallback for anonymous users' },
+          { type: 'fix', description: 'Eliminated duplicate audio players causing simultaneous playback conflicts - consolidated audio architecture for clean single-player experience' },
+          { type: 'fix', description: 'Fixed slideshow auto-advance timing to sync with actual audio duration instead of text-based estimation for perfect narration synchronization' },
+          { type: 'improvement', description: 'Enhanced story completion flow - endings no longer include continuation choices, providing proper narrative closure' },
+          { type: 'improvement', description: 'Improved audio-visual synchronization in slideshow mode for immersive storytelling experience' },
+          { type: 'improvement', description: 'Streamlined audio player architecture to prevent conflicts and improve user experience' },
+        ],
+      },
+      {
         version: '2.7.0',
         date: '2025-07-09',
         type: 'minor',

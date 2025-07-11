@@ -47,20 +47,34 @@ serve(async (req) => {
     // Fetch previous segments for context
     const previousSegments = await fetchPreviousSegments(supabaseClient, finalStoryId);
 
-    // Generate story text
-    console.log('📝 Starting text generation...')
-    const storyResult = await generateStoryContent(prompt, choiceText, genre || storyMode || 'fantasy')
+    // Generate story text with context
+    console.log('📝 Starting text generation with context...')
+    const visualContext = {
+      genre: genre || storyMode || 'fantasy',
+      characters: [],
+      setting: '',
+      previousSegments: previousSegments.map(s => s.segment_text).join(' ').substring(0, 500)
+    };
+    
+    const narrativeContext = {
+      summary: previousSegments.length > 0 ? 'Story in progress' : 'Beginning of story',
+      currentObjective: 'Continue the adventure',
+      arcStage: previousSegments.length === 0 ? 'setup' : previousSegments.length > 5 ? 'climax' : 'development'
+    };
+    
+    const storyResult = await generateStoryContent(prompt, choiceText, visualContext, narrativeContext, genre || storyMode || 'fantasy', supabaseClient)
     console.log('✅ Text generation completed')
 
     // Handle audio generation
-    let audioUrl = null
+    let audioUrl: string | null = null
     let audioStatus = 'not_started'
     
     if (!skipAudio) {
       try {
         console.log('🔊 Starting audio generation...')
-        audioUrl = await generateAudio(storyResult.segmentText)
-        audioStatus = audioUrl ? 'completed' : 'failed';
+        const audioResult = await generateAudio(storyResult.segmentText)
+        audioUrl = audioResult?.audioUrl || null;
+        audioStatus = audioResult ? 'completed' : 'failed';
       } catch (audioError) {
         console.error('❌ Audio generation failed:', audioError)
         audioStatus = 'failed';
@@ -76,7 +90,7 @@ serve(async (req) => {
       choiceText,
       audioUrl,
       audioStatus,
-      skipImage
+      skipImage ?? false
     );
 
     // Start image generation as background task if not skipped

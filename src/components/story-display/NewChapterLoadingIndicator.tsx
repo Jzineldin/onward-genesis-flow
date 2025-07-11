@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Wand2 } from 'lucide-react';
 
 const NewChapterLoadingIndicator: React.FC = () => {
   return (
@@ -9,7 +9,7 @@ const NewChapterLoadingIndicator: React.FC = () => {
       <CardContent className="p-6 text-center">
         <div className="flex justify-center mb-4">
           <div className="relative">
-            <Sparkles className="h-8 w-8 text-amber-400 animate-pulse" />
+            <Wand2 className="h-8 w-8 text-amber-400 animate-pulse" />
             <Loader2 className="absolute inset-0 h-8 w-8 text-amber-400 animate-spin opacity-50" />
           </div>
         </div>

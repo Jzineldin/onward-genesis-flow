@@ -1,11 +1,12 @@
-
 import React, { useState } from 'react';
 import { Story } from '@/types/stories';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CheckCircle, Clock, MoreHorizontal, Trash2, Eye, Bookmark, Share2, Volume2 } from 'lucide-react';
 import { usePublishStory } from '@/hooks/usePublishStory';
+import { useAuth } from '@/context/AuthProvider';
 import { Button } from '@/components/ui/button';
+import { getStoryCoverImage } from '@/utils/storyCoverUtils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,11 +17,13 @@ import {
 interface MagicalStoryCardProps {
   story: Story;
   onSetStoryToDelete: (storyId: string) => void;
+  isPublicLibrary?: boolean;
 }
 
-export const MagicalStoryCard: React.FC<MagicalStoryCardProps> = ({ story, onSetStoryToDelete }) => {
+export const MagicalStoryCard: React.FC<MagicalStoryCardProps> = ({ story, onSetStoryToDelete, isPublicLibrary = false }) => {
   const [isHovered, setIsHovered] = useState(false);
   const { mutate: publishStory, isPending: isPublishing } = usePublishStory();
+  const { user } = useAuth();
 
   const getStoryModeColor = (storyMode: string) => {
     const colorMap: { [key: string]: string } = {
@@ -38,6 +41,16 @@ export const MagicalStoryCard: React.FC<MagicalStoryCardProps> = ({ story, onSet
     return colorMap[storyMode || 'Epic Fantasy'] || 'from-purple-900/40 to-indigo-900/30';
   };
 
+  // Get story thumbnail, prioritizing generated images over generic mode images
+  const getStoryThumbnail = () => {
+    return getStoryCoverImage({ 
+      thumbnail_url: story.thumbnail_url, 
+      story_mode: story.story_mode 
+    });
+  };
+
+  const thumbnailImage = getStoryThumbnail();
+
   return (
     <div 
       className={`magical-book-card group relative ${isHovered ? 'hovered' : ''}`}
@@ -52,8 +65,20 @@ export const MagicalStoryCard: React.FC<MagicalStoryCardProps> = ({ story, onSet
         <div className="absolute top-1/2 left-1 right-1 h-px bg-amber-500/40 rounded-full transform -translate-y-1/2"></div>
       </div>
       
-      {/* Main book cover with old book styling */}
-      <div className={`relative h-72 w-full rounded-xl bg-gradient-to-br ${getStoryModeColor(story.story_mode || 'Epic Fantasy')} old-book-texture ornate-gold-border shadow-2xl overflow-hidden`}>
+      {/* Main book cover with optional background image and old book styling */}
+      <div 
+        className={`relative h-72 w-full rounded-xl bg-gradient-to-br ${getStoryModeColor(story.story_mode || 'Epic Fantasy')} old-book-texture ornate-gold-border shadow-2xl overflow-hidden`}
+        style={thumbnailImage ? {
+          backgroundImage: `url(${thumbnailImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
+      >
+        
+        {/* Background image overlay for text readability */}
+        {thumbnailImage && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20"></div>
+        )}
         
         {/* Aged paper overlay with more texture */}
         <div className="absolute inset-0 opacity-30"
@@ -169,16 +194,19 @@ export const MagicalStoryCard: React.FC<MagicalStoryCardProps> = ({ story, onSet
                   View Story
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onSelect={(e) => {
-                  e.preventDefault();
-                  onSetStoryToDelete(story.id);
-                }}
-                className="text-red-400 hover:text-red-300 hover:bg-red-900/40 cursor-pointer"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
+              {/* Only show delete option for story owners or if not in public library */}
+              {(!isPublicLibrary || (user && story.user_id === user.id)) && (
+                <DropdownMenuItem 
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onSetStoryToDelete(story.id);
+                  }}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-900/40 cursor-pointer"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

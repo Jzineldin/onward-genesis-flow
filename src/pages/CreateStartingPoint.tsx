@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Sparkles, Edit3, Home } from 'lucide-react';
+import { ArrowLeft, Wand2, Edit3, Home } from 'lucide-react';
 
 interface StartingPoint {
   id: string;
@@ -165,7 +165,7 @@ const CreateStartingPoint: React.FC = () => {
         {/* Generated Starting Points */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-amber-400" />
+            <Wand2 className="h-6 w-6 text-amber-400" />
             Suggested Beginnings
           </h2>
           
@@ -224,7 +224,7 @@ const CreateStartingPoint: React.FC = () => {
             disabled={!canContinue}
             className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-12 py-4 text-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Sparkles className="mr-2 h-6 w-6" />
+            <Wand2 className="mr-2 h-6 w-6" />
             Continue to Customization
           </Button>
           

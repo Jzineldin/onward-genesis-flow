@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CheckCircle, Hourglass, ImageIcon } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
+import { getStoryCoverImage } from '@/utils/storyCoverUtils';
 
 interface StoryCardProps {
   story: Story;
@@ -26,22 +27,12 @@ const StoryCard = ({ story }: StoryCardProps) => {
     setImageLoaded(true);
   };
 
-  // Map story mode to image filename with static paths - using exact file names
-  const getStoryModeImage = (storyMode: string) => {
-    const imageMap: { [key: string]: string } = {
-      'Epic Fantasy': '/images/Epic Fantasy.png',
-      'Sci-Fi Thriller': '/images/Sci-Fi Thriller.png',
-      'Mystery Detective': '/images/Mystery Detective.png',
-      'Horror Story': '/images/Horror Story.png',
-      'Adventure Quest': '/images/Adventure Quest.png',
-      'Romantic Drama': '/images/Romantic Drama.png',
-      'Comedy Adventure': '/images/Comedy Adventure.png',
-      'Historical Journey': '/images/Historical Journey.png',
-      'Child-Adapted Story': '/images/Child-Adapted Story.png',
-      'Educational Adventure': '/images/Educational Adventure.png',
-    };
-    
-    return imageMap[storyMode] || story.thumbnail_url || '/placeholder.svg';
+  // Prioritize generated story images over generic mode images  // Prioritize generated story images over generic mode images
+  const getStoryThumbnail = (storyMode: string) => {
+    return getStoryCoverImage({ 
+      thumbnail_url: story.thumbnail_url, 
+      story_mode: storyMode 
+    });
   };
 
   return (
@@ -62,7 +53,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
           </div>
         ) : (
           <img 
-            src={getStoryModeImage(story.story_mode || 'Epic Fantasy')}
+            src={getStoryThumbnail(story.story_mode || 'Epic Fantasy')}
             alt={story.title || 'Story thumbnail'} 
             className={`w-full h-full object-cover object-center absolute inset-0 transition-opacity duration-600 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={handleImageLoad}

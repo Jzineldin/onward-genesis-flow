@@ -129,6 +129,7 @@ export const useStoryDisplay = () => {
     pendingParams,
     
     // URL params
+    id,
     genre,
     prompt,
     characterName,

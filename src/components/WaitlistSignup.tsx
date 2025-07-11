@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mail, Users, CheckCircle, Loader2, Sparkles } from 'lucide-react';
+import { Mail, Users, CheckCircle, Loader2, Star } from 'lucide-react';
 
 const waitlistSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -72,7 +72,7 @@ const WaitlistSignup: React.FC<WaitlistSignupProps> = ({ variant = 'card', class
         <CardContent className="p-6 text-center space-y-4">
           <div className="relative">
             <CheckCircle className="h-16 w-16 text-green-400 mx-auto" />
-            <Sparkles className="h-6 w-6 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
+            <Star className="h-6 w-6 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
           </div>
           <div className="space-y-2">
             <h3 className="text-xl font-semibold text-green-300">You're on the list!</h3>

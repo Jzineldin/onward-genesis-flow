@@ -107,16 +107,6 @@ const StoryMainContent: React.FC<StoryMainContentProps> = ({
           />
         )}
       </div>
-
-      {/* Persistent Story Narration Player - only show if not completed */}
-      {storyId && !isStoryCompleted && (
-        <StoryNarrationPlayer
-          storyId={storyId}
-          narrationAudioUrl={narrationAudioUrl}
-          storyTitle={storyTitle}
-          isVisible={true}
-        />
-      )}
     </>
   );
 };

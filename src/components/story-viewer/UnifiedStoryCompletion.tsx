@@ -10,6 +10,7 @@ import StoryContentPreview from './completion/StoryContentPreview';
 import VoiceGenerationSection from './completion/VoiceGenerationSection';
 import PublishStorySection from './completion/PublishStorySection';
 import WatchStorySection from './completion/WatchStorySection';
+import DownloadStorySection from './completion/DownloadStorySection';
 
 interface UnifiedStoryCompletionProps {
     storyId: string;
@@ -18,6 +19,7 @@ interface UnifiedStoryCompletionProps {
     audioGenerationStatus?: string;
     isPublic?: boolean;
     onExit?: () => void;
+    storyTitle?: string;
 }
 
 const UnifiedStoryCompletion: React.FC<UnifiedStoryCompletionProps> = ({
@@ -26,7 +28,8 @@ const UnifiedStoryCompletion: React.FC<UnifiedStoryCompletionProps> = ({
     fullStoryAudioUrl,
     audioGenerationStatus,
     isPublic = false,
-    onExit
+    onExit,
+    storyTitle
 }) => {
     const [showSlideshow, setShowSlideshow] = useState(false);
     const [isGeneratingMissingImage, setIsGeneratingMissingImage] = useState(false);
@@ -120,6 +123,11 @@ const UnifiedStoryCompletion: React.FC<UnifiedStoryCompletionProps> = ({
                     canGenerate={canGenerate}
                     fullStoryAudioUrl={fullStoryAudioUrl}
                     onGenerateVoice={handleGenerateVoice}
+                />
+
+                <DownloadStorySection
+                    storyId={storyId}
+                    storyTitle={storyTitle || 'TaleForge Story'}
                 />
 
                 <PublishStorySection

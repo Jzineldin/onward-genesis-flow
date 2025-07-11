@@ -9,7 +9,7 @@ interface StoryImageSectionProps {
   onRetry?: () => void;
 }
 
-const StoryImageSection: React.FC<StoryImageSectionProps> = ({
+const StoryImageSection: React.FC<StoryImageSectionProps> = React.memo(({
   imageUrl,
   imageGenerationStatus,
   segmentId,
@@ -34,6 +34,9 @@ const StoryImageSection: React.FC<StoryImageSectionProps> = ({
       />
     </div>
   );
-};
+});
+
+// Display name for debugging
+StoryImageSection.displayName = 'StoryImageSection';
 
 export default StoryImageSection;

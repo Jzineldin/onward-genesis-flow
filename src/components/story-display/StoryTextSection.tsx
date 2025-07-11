@@ -13,7 +13,7 @@ interface StoryTextSectionProps {
   isStoryComplete?: boolean;
 }
 
-const StoryTextSection: React.FC<StoryTextSectionProps> = ({
+const StoryTextSection: React.FC<StoryTextSectionProps> = React.memo(({
   segmentText,
   segmentCount,
   audioUrl,
@@ -55,6 +55,9 @@ const StoryTextSection: React.FC<StoryTextSectionProps> = ({
       </Card>
     </div>
   );
-};
+});
+
+// Display name for debugging
+StoryTextSection.displayName = 'StoryTextSection';
 
 export default StoryTextSection;

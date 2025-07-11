@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mail, Users, Sparkles } from 'lucide-react';
+import { Mail, Users, Star } from 'lucide-react';
 
 const WaitlistForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -59,7 +59,7 @@ const WaitlistForm: React.FC = () => {
         <CardContent className="pt-6 text-center">
           <div className="flex justify-center mb-4">
             <div className="relative">
-              <Sparkles className="h-12 w-12 text-amber-400" />
+              <Star className="h-12 w-12 text-amber-400" />
               <div className="absolute inset-0 h-12 w-12 border-2 border-amber-400 rounded-full animate-ping opacity-30"></div>
             </div>
           </div>
