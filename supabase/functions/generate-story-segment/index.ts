@@ -8,6 +8,7 @@ import { validateRequest } from './request-validation.ts'
 import { createStoryIfNeeded, fetchPreviousSegments } from './story-creation.ts'
 import { generateStoryContent } from './text-generation.ts'
 import { saveStorySegment } from './segment-storage.ts'
+import { checkOVHHealth } from './ovh-health-check.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,6 +41,15 @@ serve(async (req) => {
     console.log('⚙️ Loading admin settings for image generation...');
     const settings = await getGenerationSettings(supabaseAdmin);
     console.log('⚙️ Image provider settings:', settings.imageProviders);
+    
+    // Perform OVH health check to diagnose any issues early
+    console.log('🏥 Checking OVH AI service health...');
+    const healthCheck = await checkOVHHealth();
+    console.log('🏥 OVH Health Check Results:', healthCheck);
+    
+    if (!healthCheck.isHealthy) {
+      console.warn('⚠️ OVH AI service not healthy, will rely on OpenAI fallback');
+    }
 
     // Create story or get existing story ID
     const finalStoryId = await createStoryIfNeeded(supabaseClient, storyId, prompt, genre, storyMode);

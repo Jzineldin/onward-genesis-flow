@@ -60,16 +60,38 @@ async function generateStoryContent(
     
   } catch (ovhError) {
     console.error('❌ OVH Qwen2.5 failed:', ovhError);
+    console.error('🔍 OVH Error Details:', {
+      message: ovhError.message,
+      name: ovhError.name,
+      isNetworkError: ovhError.message.includes('Failed to fetch'),
+      isAuthError: ovhError.message.includes('authentication'),
+      isRateLimit: ovhError.message.includes('rate limit'),
+      isServerError: ovhError.message.includes('server error')
+    });
+    
     console.log('🔄 Falling back to OpenAI GPT-4o-mini...');
     
-    // Fallback to OpenAI
-    return await generateStoryWithOpenAI(
-      initialPrompt,
-      choiceText,
-      visualContext,
-      narrativeContext,
-      storyMode
-    );
+    // Fallback to OpenAI with enhanced error context
+    try {
+      return await generateStoryWithOpenAI(
+        initialPrompt,
+        choiceText,
+        visualContext,
+        narrativeContext,
+        storyMode
+      );
+    } catch (openaiError) {
+      console.error('❌ OpenAI fallback also failed:', openaiError);
+      
+      // Create a comprehensive error message
+      const errorDetails = [
+        'Both AI providers failed:',
+        `- OVH Error: ${ovhError.message}`,
+        `- OpenAI Error: ${openaiError.message}`
+      ].join('\n');
+      
+      throw new Error(`Storytelling AI temporarily unavailable. ${errorDetails}`);
+    }
   }
 }
 
