@@ -52,7 +52,6 @@ export const useStorySegmentRealtime = ({
               audio_generation_status: payload.new.audio_generation_status || 'not_started',
               triggering_choice_text: payload.new.triggering_choice_text,
               segment_text: payload.new.segment_text || '',
-              parent_segment_id: payload.new.parent_segment_id,
               created_at: payload.new.created_at,
               word_count: payload.new.word_count
             };
