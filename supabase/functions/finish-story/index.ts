@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -14,7 +15,7 @@ serve(async (req) => {
   try {
     console.log('=== FINISH STORY FUNCTION START ===');
     
-    const { storyId, skipImage = true } = await req.json()
+    const { storyId, skipImage = false } = await req.json()
     console.log('🏁 Finishing story with ID:', storyId);
     console.log('📸 Skip image for ending:', skipImage);
 
@@ -58,8 +59,6 @@ serve(async (req) => {
     // Create story context for ending generation
     const storyText = segments.map(seg => seg.segment_text).join('\n\n');
     
-    // Generate a proper ending - create the ending directly instead of calling generate-story-segment
-    // to avoid generating multiple chapters with choices
     const endingPrompt = `Write a satisfying conclusion to this ${story.story_mode || 'fantasy'} story. 
 
 Complete story so far:
@@ -75,9 +74,9 @@ Create a proper ending that:
 
 Write only the conclusion segment text.`;
 
-    console.log('🎯 Generating story ending directly...');
+    console.log('🎯 Generating story ending with OpenAI...');
 
-    // Generate ending text using OpenAI directly (not through generate-story-segment)
+    // Generate ending text using OpenAI
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
@@ -105,46 +104,18 @@ Write only the conclusion segment text.`;
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
       throw new Error(`OpenAI API failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    const endingText = data.choices[0].message.content;
+    const endingText = data.choices?.[0]?.message?.content;
     
     if (!endingText) {
       throw new Error('Failed to generate ending text');
     }
 
     console.log('✅ Story ending text generated');
-
-    // Generate image prompt for the ending if needed
-    let imagePrompt = null;
-    if (!skipImage) {
-      const imagePromptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { 
-              role: 'system', 
-              content: `Create a detailed image prompt for the final scene of this story. Focus on the climactic or concluding visual moment.` 
-            },
-            { role: 'user', content: `Story ending: ${endingText}\n\nCreate an image prompt for the final scene.` }
-          ],
-          temperature: 0.7,
-          max_tokens: 200
-        }),
-      });
-
-      if (imagePromptResponse.ok) {
-        const imageData = await imagePromptResponse.json();
-        imagePrompt = imageData.choices[0].message.content;
-      }
-    }
 
     // Create the ending segment directly in the database
     const { data: endingSegment, error: insertError } = await supabaseClient
@@ -157,7 +128,7 @@ Write only the conclusion segment text.`;
         is_end: true, // Mark as ending
         triggering_choice_text: 'End the story',
         word_count: endingText.split(/\s+/).filter(word => word.length > 0).length,
-        image_generation_status: skipImage ? 'skipped' : 'pending',
+        image_generation_status: skipImage ? 'not_started' : 'pending',
         audio_generation_status: 'not_started'
       })
       .select()
@@ -171,41 +142,56 @@ Write only the conclusion segment text.`;
     console.log('✅ Ending segment created:', endingSegment.id);
 
     // Start image generation as background task if not skipped
-    if (!skipImage && imagePrompt) {
+    if (!skipImage) {
       console.log('🎨 Starting background image generation for ending...');
       
-      // Start image generation by calling the generate-story-segment function with image-only mode
-      const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
+      // Generate image prompt for the ending
+      try {
+        const imagePromptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { 
+                role: 'system', 
+                content: `Create a detailed image prompt for the final scene of this story. Focus on the climactic or concluding visual moment.` 
+              },
+              { role: 'user', content: `Story ending: ${endingText}\n\nCreate an image prompt for the final scene.` }
+            ],
+            temperature: 0.7,
+            max_tokens: 200
+          }),
+        });
 
-      // Use EdgeRuntime waitUntil for background image generation
-      if (typeof EdgeRuntime !== 'undefined') {
-        EdgeRuntime.waitUntil(
-          supabaseClient.functions.invoke('generate-story-segment', {
-            body: {
-              action: 'generate_image_only',
-              segmentId: endingSegment.id,
-              storyId: storyId,
-              segmentText: endingText,
-              imagePrompt: imagePrompt
+        if (imagePromptResponse.ok) {
+          const imageData = await imagePromptResponse.json();
+          const imagePrompt = imageData.choices?.[0]?.message?.content;
+          
+          if (imagePrompt) {
+            // Start background image generation
+            if (typeof EdgeRuntime !== 'undefined') {
+              EdgeRuntime.waitUntil(
+                supabaseClient.functions.invoke('generate-story-segment', {
+                  body: {
+                    action: 'generate_image_only',
+                    segmentId: endingSegment.id,
+                    storyId: storyId,
+                    segmentText: endingText,
+                    imagePrompt: imagePrompt
+                  }
+                })
+              );
             }
-          })
-        );
+          }
+        }
+      } catch (imageError) {
+        console.warn('Image prompt generation failed, continuing without image:', imageError);
       }
     }
-
-    const endingResult = { data: endingSegment };
-
-    if (!endingResult || !endingResult.data) {
-      throw new Error('Failed to create ending segment');
-    }
-
-    console.log('✅ Ending segment created successfully:', endingResult.data.id);
-
-    // Mark the ending segment as the end and remove any choices (already done in insert)
-    // No need to update since we already created it with the correct values
 
     // Mark the story as completed
     const { error: storyUpdateError } = await supabaseClient
@@ -223,7 +209,7 @@ Write only the conclusion segment text.`;
       JSON.stringify({ 
         success: true, 
         message: 'Story finished successfully with generated ending',
-        endingSegment: { ...endingResult.data, is_end: true, choices: [] }
+        endingSegment: { ...endingSegment, is_end: true, choices: [] }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
