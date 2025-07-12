@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateStoryContent } from '../generate-story-segment/text-generation.ts'
+import { generateStoryContent } from '../generate-story-segment/llm.ts'
 import { processImageGeneration } from '../generate-story-segment/image-background-tasks.ts'
 
 const corsHeaders = {
