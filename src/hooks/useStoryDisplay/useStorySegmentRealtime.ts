@@ -48,12 +48,17 @@ export const useStorySegmentRealtime = ({
               audioUrl: payload.new.audio_url || undefined,
               choices: payload.new.choices || [],
               isEnd: payload.new.is_end || false,
+              story_id: payload.new.story_id,
+              segment_text: payload.new.segment_text || '',
+              image_url: payload.new.image_url,
+              audio_url: payload.new.audio_url,
+              is_end: payload.new.is_end || false,
               image_generation_status: payload.new.image_generation_status || 'not_started',
               audio_generation_status: payload.new.audio_generation_status || 'not_started',
               triggering_choice_text: payload.new.triggering_choice_text,
-              segment_text: payload.new.segment_text || '',
               created_at: payload.new.created_at,
-              word_count: payload.new.word_count
+              word_count: payload.new.word_count,
+              audio_duration: payload.new.audio_duration
             };
 
             // Update current segment if it matches
