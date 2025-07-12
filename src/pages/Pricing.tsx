@@ -6,7 +6,7 @@ import { useCustomerPortal } from '@/hooks/useCustomerPortal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Sparkles, Video, Zap, Star, ExternalLink } from 'lucide-react';
+import { Check, Crown, Sparkles, Video, Zap, Star } from 'lucide-react';
 
 interface PricingTier {
   name: string;
@@ -19,11 +19,10 @@ interface PricingTier {
   priceId: string | null;
 }
 
-// TODO: Replace these with your actual Stripe price IDs from your Dashboard
-// Go to https://dashboard.stripe.com/products to find your real price IDs
+// Updated with your actual Stripe price IDs
 const STRIPE_PRICE_IDS = {
-  premium: 'price_1REPLACE_WITH_YOUR_PREMIUM_PRICE_ID', // Replace with your actual Premium price ID
-  pro: 'price_1REPLACE_WITH_YOUR_PRO_PRICE_ID',         // Replace with your actual Pro price ID
+  premium: 'price_1RkAM4K8ILu7UAIcJrR6YJl0', // TaleForge Premium $9.99
+  pro: 'price_1RkALyK8ILu7UAIc34jbFSSv',     // TaleForge Professional $29.99
 };
 
 const tiers: PricingTier[] = [
@@ -66,7 +65,7 @@ const tiers: PricingTier[] = [
   },
   {
     name: 'Pro',
-    price: '$24.99',
+    price: '$29.99',
     description: 'For creators who want the best',
     features: [
       'Everything in Premium',
@@ -107,10 +106,6 @@ const Pricing: React.FC = () => {
     openPortal();
   };
 
-  const isUsingPlaceholderPrices = 
-    STRIPE_PRICE_IDS.premium.includes('REPLACE_WITH_YOUR') || 
-    STRIPE_PRICE_IDS.pro.includes('REPLACE_WITH_YOUR');
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -129,46 +124,11 @@ const Pricing: React.FC = () => {
           </p>
         </div>
 
-        {/* Configuration Notice */}
-        {isUsingPlaceholderPrices && (
-          <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center mt-0.5">
-                <span className="text-xs text-white font-bold">!</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-amber-800 mb-2">Price IDs Need to be Updated</h3>
-                <p className="text-amber-700 mb-3">
-                  Replace the placeholder price IDs in the code with your actual Stripe price IDs to enable checkout.
-                </p>
-                <div className="space-y-2 text-sm text-amber-600">
-                  <p><strong>Current placeholders:</strong></p>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Premium: {STRIPE_PRICE_IDS.premium}</li>
-                    <li>Pro: {STRIPE_PRICE_IDS.pro}</li>
-                  </ul>
-                  <p className="mt-2"><strong>Replace with real price IDs from your Stripe Dashboard</strong></p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-3 bg-white hover:bg-amber-50"
-                  onClick={() => window.open('https://dashboard.stripe.com/products', '_blank')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open Stripe Dashboard
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {tiers.map((tier) => {
             const isCurrentTier = isSubscribed && subscription_tier === tier.name;
             const isFree = tier.name === 'Free';
-            const isDisabled = !isFree && isUsingPlaceholderPrices;
             
             return (
               <Card 
@@ -177,9 +137,7 @@ const Pricing: React.FC = () => {
                   tier.popular 
                     ? 'border-2 border-primary shadow-lg scale-105' 
                     : 'border border-border'
-                } ${isCurrentTier ? 'ring-2 ring-green-500' : ''} ${
-                  isDisabled ? 'opacity-75' : ''
-                }`}
+                } ${isCurrentTier ? 'ring-2 ring-green-500' : ''}`}
               >
                 {tier.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -245,15 +203,14 @@ const Pricing: React.FC = () => {
                     ) : (
                       <Button
                         onClick={() => tier.priceId && handleSubscribe(tier.priceId, tier.name)}
-                        disabled={isCheckingOut || !tier.priceId || isDisabled}
+                        disabled={isCheckingOut || !tier.priceId}
                         className={`w-full ${
                           tier.popular 
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' 
                             : ''
                         }`}
-                        title={isDisabled ? 'Update price IDs in code first' : ''}
                       >
-                        {isDisabled ? 'Update Price IDs' : isCheckingOut ? 'Loading...' : tier.cta}
+                        {isCheckingOut ? 'Loading...' : tier.cta}
                       </Button>
                     )}
                   </div>

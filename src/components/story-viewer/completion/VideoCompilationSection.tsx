@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Video, Sparkles, Crown, Download, Share2, Clock, CheckCircle, ExternalLink } from 'lucide-react';
+import { Video, Sparkles, Crown, Download, Share2, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface VideoCompilationSectionProps {
@@ -20,8 +20,8 @@ interface VideoCompilationSectionProps {
   };
 }
 
-// TODO: Replace with your actual Premium price ID from Stripe Dashboard
-const PREMIUM_PRICE_ID = 'price_1REPLACE_WITH_YOUR_PREMIUM_PRICE_ID'; // Replace with your actual Premium price ID
+// Updated with your actual Premium price ID from Stripe Dashboard
+const PREMIUM_PRICE_ID = 'price_1RkAM4K8ILu7UAIcJrR6YJl0'; // TaleForge Premium $9.99
 
 export const VideoCompilationSection: React.FC<VideoCompilationSectionProps> = ({ story }) => {
   const { isPremium, isAuthenticated } = useSubscription();
@@ -44,8 +44,6 @@ export const VideoCompilationSection: React.FC<VideoCompilationSectionProps> = (
       tier: 'Premium'
     });
   };
-
-  const isUsingPlaceholderPrice = PREMIUM_PRICE_ID.includes('REPLACE_WITH_YOUR');
 
   const getStatusDisplay = () => {
     if (!story.shotstack_status || story.shotstack_status === 'not_started') {
@@ -134,28 +132,6 @@ export const VideoCompilationSection: React.FC<VideoCompilationSectionProps> = (
           </div>
         </div>
 
-        {/* Configuration Notice */}
-        {isUsingPlaceholderPrice && !isPremium && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded text-center space-y-2">
-            <p className="text-xs text-amber-700 font-medium">⚠️ Price ID Update Required</p>
-            <p className="text-xs text-amber-600">
-              Replace placeholder price ID with actual Stripe price ID to enable premium upgrade.
-            </p>
-            <p className="text-xs text-amber-600 font-mono bg-amber-100 p-1 rounded">
-              Current: {PREMIUM_PRICE_ID}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-7 text-xs bg-white hover:bg-amber-50"
-              onClick={() => window.open('https://dashboard.stripe.com/products', '_blank')}
-            >
-              <ExternalLink className="w-3 h-3 mr-1" />
-              Stripe Dashboard
-            </Button>
-          </div>
-        )}
-
         {/* Provider Selection (Premium Users) */}
         {isPremium && !isCompleted && !isProcessing && (
           <div className="space-y-3">
@@ -193,12 +169,11 @@ export const VideoCompilationSection: React.FC<VideoCompilationSectionProps> = (
             <>
               <Button
                 onClick={handleUpgrade}
-                disabled={isCheckingOut || isUsingPlaceholderPrice}
+                disabled={isCheckingOut}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                title={isUsingPlaceholderPrice ? 'Update price ID in code first' : ''}
               >
                 <Crown className="w-4 h-4 mr-2" />
-                {isUsingPlaceholderPrice ? 'Update Price ID' : isCheckingOut ? 'Opening Checkout...' : 'Upgrade to Premium'}
+                {isCheckingOut ? 'Opening Checkout...' : 'Upgrade to Premium'}
               </Button>
             </>
           )}
