@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
@@ -54,7 +55,7 @@ const tiers: PricingTier[] = [
     ],
     cta: 'Start Premium',
     popular: true,
-    priceId: 'price_premium_monthly', // Replace with actual Stripe price ID
+    priceId: 'price_premium_monthly',
   },
   {
     name: 'Pro',
@@ -72,7 +73,7 @@ const tiers: PricingTier[] = [
     ],
     cta: 'Go Pro',
     popular: false,
-    priceId: 'price_pro_monthly', // Replace with actual Stripe price ID
+    priceId: 'price_pro_monthly',
   },
 ];
 
@@ -88,7 +89,10 @@ const Pricing: React.FC = () => {
     }
     
     if (priceId) {
+      console.log('Starting checkout for:', { priceId, tierName });
       checkout({ priceId, tier: tierName });
+    } else {
+      console.error('No price ID provided for tier:', tierName);
     }
   };
 
@@ -111,6 +115,14 @@ const Pricing: React.FC = () => {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Unlock the full power of AI storytelling with premium features like video compilation, 
             audio narration, and unlimited creative freedom.
+          </p>
+        </div>
+
+        {/* Pricing Notice */}
+        <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+          <p className="text-yellow-800">
+            <strong>Note:</strong> Stripe pricing is currently configured with placeholder price IDs. 
+            Please set up your actual Stripe products and update the price IDs before going live.
           </p>
         </div>
 
@@ -192,15 +204,15 @@ const Pricing: React.FC = () => {
                       </Button>
                     ) : (
                       <Button
-                        onClick={() => handleSubscribe(tier.priceId!, tier.name)}
-                        disabled={isCheckingOut}
+                        onClick={() => tier.priceId && handleSubscribe(tier.priceId, tier.name)}
+                        disabled={isCheckingOut || !tier.priceId}
                         className={`w-full ${
                           tier.popular 
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' 
                             : ''
                         }`}
                       >
-                        {isCheckingOut ? 'Loading...' : tier.cta}
+                        {!tier.priceId ? 'Coming Soon' : isCheckingOut ? 'Loading...' : tier.cta}
                       </Button>
                     )}
                   </div>

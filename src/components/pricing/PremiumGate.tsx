@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
@@ -37,8 +38,9 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
       return;
     }
     
+    console.log('Starting premium upgrade checkout');
     checkout({
-      priceId: 'price_premium_monthly', // Replace with actual Stripe price ID
+      priceId: 'price_premium_monthly',
       tier: 'Premium'
     });
   };
@@ -120,6 +122,11 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
                   </Button>
                 </>
               )}
+            </div>
+
+            {/* Pricing Notice */}
+            <div className="text-xs text-muted-foreground text-center p-2 bg-yellow-50 rounded border border-yellow-200">
+              Note: Stripe checkout uses placeholder price IDs and may not work until configured with real Stripe products.
             </div>
           </div>
         )}
