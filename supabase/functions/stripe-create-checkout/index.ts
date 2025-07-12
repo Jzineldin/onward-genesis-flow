@@ -123,28 +123,13 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      // Enable coupon/promotion codes
+      // Essential configurations only
       allow_promotion_codes: true,
-      // Enable all payment methods
-      payment_method_types: ['card', 'us_bank_account'],
-      // Additional payment method configurations
-      payment_method_configuration: undefined, // Use account default
       success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing?canceled=true`,
       metadata: {
         user_id: user.id,
         tier: tier,
-      },
-      // Billing address collection
-      billing_address_collection: 'auto',
-      // Customer update options
-      customer_update: {
-        address: 'auto',
-        name: 'auto',
-      },
-      // Invoice creation
-      invoice_creation: {
-        enabled: true,
       },
     });
 
