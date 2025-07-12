@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/AuthProvider";
 import { HeaderVisibilityProvider } from "./context/HeaderVisibilityContext";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
+import Adventure from "./pages/Adventure";
 import AuthPage from "./pages/AuthPage";
 import StoryViewer from "./pages/StoryViewer";
 import MyStories from "./pages/MyStories";
@@ -28,6 +29,7 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path="/" element={<Index />} />
+                  <Route path="/adventure" element={<Adventure />} />
                   <Route path="/auth" element={<AuthPage />} />
                   <Route path="/story/:id" element={<StoryViewer />} />
                   <Route path="/create-story" element={<Index />} />
