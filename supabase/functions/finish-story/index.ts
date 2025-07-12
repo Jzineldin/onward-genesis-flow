@@ -1,11 +1,141 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateStoryContent } from '../generate-story-segment/llm.ts'
-import { processImageGeneration } from '../generate-story-segment/image-background-tasks.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Self-contained story generation function for endings
+async function generateStoryEnding(prompt: string) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  console.log('🎯 Generating story ending with OpenAI GPT-4o-mini...');
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a master storyteller. Generate compelling story content with proper conclusions.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const segmentText = data.choices[0].message.content;
+
+  return {
+    segmentText,
+    imagePrompt: `Epic conclusion scene, cinematic lighting, fantasy illustration style`
+  };
+}
+
+// Self-contained image generation function
+async function processImageGeneration(
+  segmentId: string,
+  storyId: string,
+  imagePrompt: string,
+  supabaseAdmin: any,
+  supabaseClient: any
+) {
+  console.log(`🎨 Starting image background task for segment ${segmentId}`);
+  
+  try {
+    // Update status to in_progress
+    await supabaseAdmin
+      .from('story_segments')
+      .update({ image_generation_status: 'in_progress' })
+      .eq('id', segmentId);
+
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    // Generate image with OpenAI DALL-E
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: imagePrompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+        response_format: 'b64_json',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI Image API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const base64Image = data.data[0].b64_json;
+    
+    // Convert base64 to blob
+    const imageBlob = new Uint8Array(atob(base64Image).split('').map(char => char.charCodeAt(0)));
+    
+    // Upload to Supabase Storage
+    const fileName = `story-${storyId}-segment-${segmentId}-${Date.now()}.png`;
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('story-images')
+      .upload(fileName, imageBlob, {
+        contentType: 'image/png',
+      });
+
+    if (uploadError) {
+      throw new Error(`Storage upload error: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('story-images')
+      .getPublicUrl(fileName);
+
+    // Update segment with image URL
+    await supabaseAdmin
+      .from('story_segments')
+      .update({ 
+        image_url: publicUrl,
+        image_generation_status: 'completed'
+      })
+      .eq('id', segmentId);
+
+    console.log(`✅ Image generated successfully for segment ${segmentId}`);
+    
+  } catch (error) {
+    console.error(`❌ Image generation failed for segment ${segmentId}:`, error);
+    
+    await supabaseAdmin
+      .from('story_segments')
+      .update({ image_generation_status: 'failed' })
+      .eq('id', segmentId);
+  }
 }
 
 serve(async (req) => {
@@ -80,37 +210,15 @@ Create a proper ending that:
 
 Write only the conclusion segment text.`;
 
-    console.log('🎯 Generating story ending using configured text provider (Qwen)...');
+    console.log('🎯 Generating story ending...');
 
-    // Use the same text generation pipeline as main story generation
-    // This will respect admin settings (Qwen as primary, OpenAI as fallback)
-    const visualContext = {
-      genre: story.story_mode || 'fantasy',
-      characters: [],
-      setting: '',
-      previousSegments: segments.map(s => s.segment_text).join(' ').substring(0, 500)
-    };
-    
-    const narrativeContext = {
-      summary: 'Story conclusion',
-      currentObjective: 'Conclude the adventure with a satisfying ending',
-      arcStage: 'resolution'
-    };
-
-    const storyResult = await generateStoryContent(
-      endingPrompt, 
-      'End the story', 
-      visualContext, 
-      narrativeContext, 
-      story.story_mode || 'fantasy',
-      supabaseAdmin
-    );
+    const storyResult = await generateStoryEnding(endingPrompt);
 
     if (!storyResult.segmentText) {
       throw new Error('Failed to generate ending text');
     }
 
-    console.log('✅ Story ending text generated using configured providers');
+    console.log('✅ Story ending text generated');
 
     // Create the ending segment directly in the database
     const { data: endingSegment, error: insertError } = await supabaseClient
@@ -137,9 +245,8 @@ Write only the conclusion segment text.`;
     console.log('✅ Ending segment created:', endingSegment.id);
 
     // Start image generation as background task if not skipped
-    // This will use the configured image provider (OVH Stable Diffusion)
     if (!skipImage && storyResult.imagePrompt) {
-      console.log('🎨 Starting background image generation for ending using configured provider (OVH Stable Diffusion)...');
+      console.log('🎨 Starting background image generation for ending...');
       
       EdgeRuntime.waitUntil(
         processImageGeneration(
@@ -147,8 +254,7 @@ Write only the conclusion segment text.`;
           storyId,
           storyResult.imagePrompt,
           supabaseAdmin,
-          supabaseClient,
-          visualContext
+          supabaseClient
         )
       );
     }
@@ -163,7 +269,7 @@ Write only the conclusion segment text.`;
       console.warn('Warning: Could not mark story as completed:', storyUpdateError);
     }
 
-    console.log('✅ Story finished successfully with generated ending using configured providers');
+    console.log('✅ Story finished successfully with generated ending');
 
     return new Response(
       JSON.stringify({ 
