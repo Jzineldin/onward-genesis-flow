@@ -1,15 +1,9 @@
 
 import React from 'react';
-import HomePage from '@/components/HomePage';
+import CinematicLanding from '@/components/home/CinematicLanding';
 
-const Adventure = () => {
-  console.log('Adventure page: Rendering interactive adventures landing page');
-
-  return (
-    <div className="relative h-screen w-full bg-transparent">
-      <HomePage />
-    </div>
-  );
+const Adventure: React.FC = () => {
+  return <CinematicLanding />;
 };
 
 export default Adventure;

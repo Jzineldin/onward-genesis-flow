@@ -7,137 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Self-contained story generation function for endings
-async function generateStoryEnding(prompt: string) {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  console.log('🎯 Generating story ending with OpenAI GPT-4o-mini...');
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a master storyteller. Generate compelling story content with proper conclusions.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 500
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const segmentText = data.choices[0].message.content;
-
-  return {
-    segmentText,
-    imagePrompt: `Epic conclusion scene, cinematic lighting, fantasy illustration style`
-  };
-}
-
-// Self-contained image generation function
-async function processImageGeneration(
-  segmentId: string,
-  storyId: string,
-  imagePrompt: string,
-  supabaseAdmin: any,
-  supabaseClient: any
-) {
-  console.log(`🎨 Starting image background task for segment ${segmentId}`);
-  
-  try {
-    // Update status to in_progress
-    await supabaseAdmin
-      .from('story_segments')
-      .update({ image_generation_status: 'in_progress' })
-      .eq('id', segmentId);
-
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    // Generate image with OpenAI DALL-E
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: imagePrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
-        response_format: 'b64_json',
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI Image API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const base64Image = data.data[0].b64_json;
-    
-    // Convert base64 to blob
-    const imageBlob = new Uint8Array(atob(base64Image).split('').map(char => char.charCodeAt(0)));
-    
-    // Upload to Supabase Storage
-    const fileName = `story-${storyId}-segment-${segmentId}-${Date.now()}.png`;
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-      .from('story-images')
-      .upload(fileName, imageBlob, {
-        contentType: 'image/png',
-      });
-
-    if (uploadError) {
-      throw new Error(`Storage upload error: ${uploadError.message}`);
-    }
-
-    const { data: { publicUrl } } = supabaseAdmin.storage
-      .from('story-images')
-      .getPublicUrl(fileName);
-
-    // Update segment with image URL
-    await supabaseAdmin
-      .from('story_segments')
-      .update({ 
-        image_url: publicUrl,
-        image_generation_status: 'completed'
-      })
-      .eq('id', segmentId);
-
-    console.log(`✅ Image generated successfully for segment ${segmentId}`);
-    
-  } catch (error) {
-    console.error(`❌ Image generation failed for segment ${segmentId}:`, error);
-    
-    await supabaseAdmin
-      .from('story_segments')
-      .update({ image_generation_status: 'failed' })
-      .eq('id', segmentId);
-  }
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -146,9 +15,8 @@ serve(async (req) => {
   try {
     console.log('=== FINISH STORY FUNCTION START ===');
     
-    const { storyId, skipImage = false } = await req.json()
+    const { storyId } = await req.json()
     console.log('🏁 Finishing story with ID:', storyId);
-    console.log('📸 Skip image for ending:', skipImage);
 
     if (!storyId) {
       throw new Error('Story ID is required');
@@ -177,7 +45,7 @@ serve(async (req) => {
       throw new Error(`Failed to fetch story: ${storyError.message}`);
     }
 
-    // Get all story segments for context
+    // Get all story segments to find the latest one
     const { data: segments, error: segmentsError } = await supabaseClient
       .from('story_segments')
       .select('*')
@@ -210,57 +78,49 @@ Create a proper ending that:
 
 Write only the conclusion segment text.`;
 
-    console.log('🎯 Generating story ending...');
+    console.log('🎯 Calling generate-story-segment for ending...');
 
-    const storyResult = await generateStoryEnding(endingPrompt);
+    // Use our existing working generate-story-segment function
+    const { data: generationResult, error: generationError } = await supabaseAdmin.functions.invoke('generate-story-segment', {
+      body: {
+        storyId: storyId,
+        parentSegmentId: latestSegment.id,
+        prompt: endingPrompt,
+        choiceText: 'End the story',
+        storyMode: story.story_mode || 'fantasy',
+        skipAudio: true, // Skip audio for faster completion
+        generateImage: true // Still generate image for the ending
+      }
+    });
 
-    if (!storyResult.segmentText) {
-      throw new Error('Failed to generate ending text');
+    if (generationError) {
+      console.error('Story generation error:', generationError);
+      throw new Error(`Failed to generate story ending: ${generationError.message}`);
     }
 
-    console.log('✅ Story ending text generated');
+    if (!generationResult || !generationResult.success || !generationResult.data) {
+      throw new Error('Invalid response from story generation');
+    }
 
-    // Create the ending segment directly in the database
-    const { data: endingSegment, error: insertError } = await supabaseClient
+    const endingSegment = generationResult.data;
+    console.log('✅ Story ending segment created:', endingSegment.id);
+
+    // Mark the segment as ending and remove choices
+    const { error: updateError } = await supabaseAdmin
       .from('story_segments')
-      .insert({
-        story_id: storyId,
-        parent_segment_id: latestSegment.id,
-        segment_text: storyResult.segmentText,
-        choices: [], // No choices for ending
-        is_end: true, // Mark as ending
-        triggering_choice_text: 'End the story',
-        word_count: storyResult.segmentText.split(/\s+/).filter(word => word.length > 0).length,
-        image_generation_status: skipImage ? 'not_started' : 'pending',
-        audio_generation_status: 'not_started'
+      .update({ 
+        is_end: true,
+        choices: [] // Remove choices since this is the ending
       })
-      .select()
-      .single();
+      .eq('id', endingSegment.id);
 
-    if (insertError) {
-      console.error('Error creating ending segment:', insertError);
-      throw new Error(`Failed to create ending segment: ${insertError.message}`);
-    }
-
-    console.log('✅ Ending segment created:', endingSegment.id);
-
-    // Start image generation as background task if not skipped
-    if (!skipImage && storyResult.imagePrompt) {
-      console.log('🎨 Starting background image generation for ending...');
-      
-      EdgeRuntime.waitUntil(
-        processImageGeneration(
-          endingSegment.id,
-          storyId,
-          storyResult.imagePrompt,
-          supabaseAdmin,
-          supabaseClient
-        )
-      );
+    if (updateError) {
+      console.error('Error marking segment as end:', updateError);
+      throw new Error('Failed to mark story as completed');
     }
 
     // Mark the story as completed
-    const { error: storyUpdateError } = await supabaseClient
+    const { error: storyUpdateError } = await supabaseAdmin
       .from('stories')
       .update({ is_completed: true })
       .eq('id', storyId);
