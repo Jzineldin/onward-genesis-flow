@@ -9,6 +9,7 @@ import { useStoryUIState } from './useStoryDisplay/useStoryUIState';
 import { useStoryInitialization } from './useStoryDisplay/useStoryInitialization';
 import { useStoryHandlers } from './useStoryDisplay/useStoryHandlers';
 import { useStoryInitializationLogic } from './useStoryDisplay/useStoryInitializationLogic';
+import { useStoryDisplayRealtime } from './useStoryDisplay/useStoryDisplayRealtime';
 
 export const useStoryDisplay = () => {
   const navigate = useNavigate();
@@ -78,6 +79,14 @@ export const useStoryDisplay = () => {
   const { id, genre, prompt, characterName, isInitialLoad, setIsInitialLoad, storyLoaded, setStoryLoaded } = useStoryInitialization();
 
   const { storyData, fetchStoryData, refreshStoryData } = useStoryData(id);
+
+  // Set up real-time subscriptions for story segments
+  useStoryDisplayRealtime({
+    storyId: id || '',
+    currentStorySegment,
+    setCurrentStorySegment,
+    setAllStorySegments
+  });
 
   const { showConfirmation, handleConfirmGeneration, handleChoiceSelect, handleStoryFinish } = useStoryHandlers({
     maxSegments,

@@ -48,6 +48,23 @@ const StoryImage: React.FC<StoryImageProps> = ({
         }
     }, [imageUrl]);
 
+    // Listen for force refresh events from real-time updates
+    useEffect(() => {
+        const handleForceRefresh = (event: CustomEvent) => {
+            if (event.detail?.segmentId === segmentId) {
+                console.log('[StoryImage] Force refresh event received for segment:', segmentId);
+                setImageKey(prev => prev + 1);
+                setImageError(false);
+                setIsRetrying(false);
+            }
+        };
+
+        window.addEventListener('force-image-refresh', handleForceRefresh as EventListener);
+        return () => {
+            window.removeEventListener('force-image-refresh', handleForceRefresh as EventListener);
+        };
+    }, [segmentId]);
+
     // Auto-retry after 10 seconds on first error
     useEffect(() => {
         if (imageError && retryCount === 0) {
