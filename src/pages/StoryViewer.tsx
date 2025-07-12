@@ -100,6 +100,7 @@ const StoryViewer = () => {
                     fullStoryAudioUrl={story.full_story_audio_url}
                     audioGenerationStatus={story.audio_generation_status}
                     storyTitle={story.title || undefined}
+                    story={story}
                 />
             )}
         </div>

@@ -8,6 +8,7 @@ import StorySlideshow from './StorySlideshow';
 import StoryCompletionHeader from './completion/StoryCompletionHeader';
 import StoryContentPreview from './completion/StoryContentPreview';
 import VoiceGenerationSection from './completion/VoiceGenerationSection';
+import { VideoCompilationSection } from './completion/VideoCompilationSection';
 import PublishStorySection from './completion/PublishStorySection';
 import WatchStorySection from './completion/WatchStorySection';
 import DownloadStorySection from './completion/DownloadStorySection';
@@ -20,6 +21,7 @@ interface UnifiedStoryCompletionProps {
     isPublic?: boolean;
     onExit?: () => void;
     storyTitle?: string;
+    story?: any; // Add story object for video compilation
 }
 
 const UnifiedStoryCompletion: React.FC<UnifiedStoryCompletionProps> = ({
@@ -29,7 +31,8 @@ const UnifiedStoryCompletion: React.FC<UnifiedStoryCompletionProps> = ({
     audioGenerationStatus,
     isPublic = false,
     onExit,
-    storyTitle
+    storyTitle,
+    story
 }) => {
     const [showSlideshow, setShowSlideshow] = useState(false);
     const [isGeneratingMissingImage, setIsGeneratingMissingImage] = useState(false);
@@ -123,6 +126,16 @@ const UnifiedStoryCompletion: React.FC<UnifiedStoryCompletionProps> = ({
                     canGenerate={canGenerate}
                     fullStoryAudioUrl={fullStoryAudioUrl}
                     onGenerateVoice={handleGenerateVoice}
+                />
+
+                <VideoCompilationSection
+                    story={{
+                        id: storyId,
+                        title: storyTitle,
+                        shotstack_status: story?.shotstack_status,
+                        shotstack_video_url: story?.shotstack_video_url,
+                        shotstack_render_id: story?.shotstack_render_id,
+                    }}
                 />
 
                 <DownloadStorySection

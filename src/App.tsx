@@ -24,6 +24,7 @@ import CreatePrompt from "./pages/CreatePrompt";
 import CreateStartingPoint from "./pages/CreateStartingPoint";
 import CreateCustomize from "./pages/CreateCustomize";
 import StoryDisplay from "./pages/StoryDisplay";
+import Pricing from "./pages/Pricing";
 import Beta from "./pages/Beta";
 import Admin from "./pages/Admin";
 import Diagnostics from "./pages/Diagnostics";
@@ -74,6 +75,7 @@ function App() {
                         />
                         <Route path="/public-stories" element={<PublicStories />} />
                         <Route path="/discover" element={<Discover />} />
+                        <Route path="/pricing" element={<Pricing />} />
                         <Route path="/story-viewer/:id" element={<ErrorBoundary><StoryViewer /></ErrorBoundary>} />
                         <Route path="/beta" element={<Beta />} />
                         <Route 

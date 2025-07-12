@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
-import { Home, Clock, PenTool, Globe } from 'lucide-react';
+import { Home, Clock, PenTool, Globe, Crown } from 'lucide-react';
 import UserMenu from '@/components/auth/UserMenu';
 import AuthButtons from '@/components/auth/AuthButtons';
 import ChangelogModal from './ChangelogModal';
@@ -80,6 +80,17 @@ const Header = () => {
                      <Globe className="h-4 w-4" />
                      Public Library
                    </Link>
+                   <Link 
+                     to="/pricing" 
+                     className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                       isActive('/pricing') 
+                         ? 'bg-primary text-primary-foreground' 
+                         : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                     }`}
+                   >
+                     <Crown className="h-4 w-4" />
+                     Pricing
+                   </Link>
                 </nav>
 
                 {/* User Menu */}
@@ -131,6 +142,18 @@ const Header = () => {
                      <Globe className="h-4 w-4" />
                      <span className="hidden lg:inline">Public Library</span>
                      <span className="lg:hidden">Public</span>
+                   </Link>
+                   <Link 
+                     to="/pricing" 
+                     className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                       isActive('/pricing') 
+                         ? 'bg-primary text-primary-foreground' 
+                         : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                     }`}
+                   >
+                     <Crown className="h-4 w-4" />
+                     <span className="hidden lg:inline">Pricing</span>
+                     <span className="lg:hidden">Premium</span>
                    </Link>
                 </nav>
 
