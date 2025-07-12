@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
-import { Home, Clock, PenTool, Globe, Crown } from 'lucide-react';
+import { Home, Clock, PenTool, Globe, Crown } from '@/lib/icons';
 import UserMenu from '@/components/auth/UserMenu';
 import AuthButtons from '@/components/auth/AuthButtons';
 import ChangelogModal from './ChangelogModal';
