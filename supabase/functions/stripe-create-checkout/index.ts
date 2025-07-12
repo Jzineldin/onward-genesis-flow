@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -26,24 +27,79 @@ serve(async (req) => {
     logStep("Function started");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey) {
+      logStep("ERROR: STRIPE_SECRET_KEY is not set");
+      return new Response(JSON.stringify({ error: "Stripe configuration error. Please contact support." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
     logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) {
+      logStep("ERROR: No authorization header provided");
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
     
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) {
+      logStep("ERROR: Authentication failed", { error: userError.message });
+      return new Response(JSON.stringify({ error: "Authentication failed" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      logStep("ERROR: User not authenticated or email not available");
+      return new Response(JSON.stringify({ error: "User email not available" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const { priceId, tier } = await req.json();
-    if (!priceId || !tier) throw new Error("Missing priceId or tier");
+    if (!priceId || !tier) {
+      logStep("ERROR: Missing priceId or tier", { priceId, tier });
+      return new Response(JSON.stringify({ error: "Missing price ID or tier information" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
     logStep("Request data", { priceId, tier });
 
+    // Check if we're using placeholder price IDs
+    if (priceId === 'price_premium_monthly' || priceId === 'price_pro_monthly') {
+      logStep("ERROR: Using placeholder price ID", { priceId });
+      return new Response(JSON.stringify({ 
+        error: "This is a demo environment with placeholder price IDs. Please set up real Stripe products to enable checkout." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    
+    // Verify the price exists in Stripe
+    try {
+      await stripe.prices.retrieve(priceId);
+      logStep("Price ID verified in Stripe", { priceId });
+    } catch (priceError) {
+      logStep("ERROR: Invalid price ID", { priceId, error: priceError.message });
+      return new Response(JSON.stringify({ 
+        error: `Invalid price ID: ${priceId}. Please check your Stripe configuration.` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
     
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
