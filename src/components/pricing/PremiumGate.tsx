@@ -5,7 +5,7 @@ import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Sparkles, ArrowRight } from 'lucide-react';
+import { Crown, Sparkles, ArrowRight, ExternalLink } from 'lucide-react';
 
 interface PremiumGateProps {
   children: React.ReactNode;
@@ -15,6 +15,9 @@ interface PremiumGateProps {
   className?: string;
   showUpgrade?: boolean;
 }
+
+// TODO: Replace with real Stripe price ID from your Stripe Dashboard
+const PREMIUM_PRICE_ID = 'price_premium_monthly'; // Replace with real price ID (e.g., price_1ABC123...)
 
 export const PremiumGate: React.FC<PremiumGateProps> = ({
   children,
@@ -40,10 +43,12 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
     
     console.log('Starting premium upgrade checkout');
     checkout({
-      priceId: 'price_premium_monthly',
+      priceId: PREMIUM_PRICE_ID,
       tier: 'Premium'
     });
   };
+
+  const isUsingPlaceholderPrice = PREMIUM_PRICE_ID.startsWith('price_premium_');
 
   // Render premium gate
   return (
@@ -82,6 +87,25 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
           </div>
         </div>
 
+        {/* Configuration Notice */}
+        {isUsingPlaceholderPrice && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded text-center space-y-2">
+            <p className="text-xs text-amber-700 font-medium">⚠️ Stripe Setup Required</p>
+            <p className="text-xs text-amber-600">
+              Replace placeholder price ID with real Stripe product ID to enable checkout.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-7 text-xs bg-white hover:bg-amber-50"
+              onClick={() => window.open('https://dashboard.stripe.com/products', '_blank')}
+            >
+              <ExternalLink className="w-3 h-3 mr-1" />
+              Stripe Dashboard
+            </Button>
+          </div>
+        )}
+
         {/* Upgrade Actions */}
         {showUpgrade && (
           <div className="space-y-4 pt-4 border-t">
@@ -106,11 +130,12 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
                 <>
                   <Button
                     onClick={handleUpgrade}
-                    disabled={isCheckingOut}
+                    disabled={isCheckingOut || isUsingPlaceholderPrice}
                     className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    title={isUsingPlaceholderPrice ? 'Configure Stripe products first' : ''}
                   >
                     <Crown className="w-4 h-4 mr-2" />
-                    {isCheckingOut ? 'Opening Checkout...' : 'Upgrade to Premium'}
+                    {isUsingPlaceholderPrice ? 'Setup Required' : isCheckingOut ? 'Opening Checkout...' : 'Upgrade to Premium'}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -122,11 +147,6 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
                   </Button>
                 </>
               )}
-            </div>
-
-            {/* Pricing Notice */}
-            <div className="text-xs text-muted-foreground text-center p-2 bg-yellow-50 rounded border border-yellow-200">
-              Note: Stripe checkout uses placeholder price IDs and may not work until configured with real Stripe products.
             </div>
           </div>
         )}

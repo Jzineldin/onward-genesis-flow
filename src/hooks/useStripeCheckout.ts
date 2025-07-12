@@ -43,7 +43,15 @@ export const useStripeCheckout = () => {
     },
     onError: (error: Error) => {
       console.error('Checkout error:', error);
-      toast.error(`Failed to start checkout: ${error.message}`);
+      
+      // Show specific error messages
+      if (error.message.includes('placeholder price IDs')) {
+        toast.error('Demo environment detected. Please configure real Stripe products to enable checkout.');
+      } else if (error.message.includes('Invalid price ID')) {
+        toast.error('Invalid pricing configuration. Please check your Stripe setup.');
+      } else {
+        toast.error(`Checkout failed: ${error.message}`);
+      }
     },
   });
 };

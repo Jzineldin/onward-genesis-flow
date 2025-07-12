@@ -6,7 +6,7 @@ import { useCustomerPortal } from '@/hooks/useCustomerPortal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Sparkles, Video, Zap, Star } from 'lucide-react';
+import { Check, Crown, Sparkles, Video, Zap, Star, ExternalLink } from 'lucide-react';
 
 interface PricingTier {
   name: string;
@@ -18,6 +18,13 @@ interface PricingTier {
   popular: boolean;
   priceId: string | null;
 }
+
+// TODO: Replace these placeholder price IDs with real ones from your Stripe Dashboard
+// Go to https://dashboard.stripe.com/products to create products and get real price IDs
+const STRIPE_PRICE_IDS = {
+  premium: 'price_premium_monthly', // Replace with real Stripe price ID (e.g., price_1ABC123...)
+  pro: 'price_pro_monthly',         // Replace with real Stripe price ID (e.g., price_1XYZ789...)
+};
 
 const tiers: PricingTier[] = [
   {
@@ -55,7 +62,7 @@ const tiers: PricingTier[] = [
     ],
     cta: 'Start Premium',
     popular: true,
-    priceId: 'price_premium_monthly',
+    priceId: STRIPE_PRICE_IDS.premium,
   },
   {
     name: 'Pro',
@@ -73,7 +80,7 @@ const tiers: PricingTier[] = [
     ],
     cta: 'Go Pro',
     popular: false,
-    priceId: 'price_pro_monthly',
+    priceId: STRIPE_PRICE_IDS.pro,
   },
 ];
 
@@ -100,6 +107,10 @@ const Pricing: React.FC = () => {
     openPortal();
   };
 
+  const isUsingPlaceholderPrices = 
+    STRIPE_PRICE_IDS.premium.startsWith('price_premium_') || 
+    STRIPE_PRICE_IDS.pro.startsWith('price_pro_');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -118,19 +129,46 @@ const Pricing: React.FC = () => {
           </p>
         </div>
 
-        {/* Pricing Notice */}
-        <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-          <p className="text-yellow-800">
-            <strong>Note:</strong> Stripe pricing is currently configured with placeholder price IDs. 
-            Please set up your actual Stripe products and update the price IDs before going live.
-          </p>
-        </div>
+        {/* Configuration Notice */}
+        {isUsingPlaceholderPrices && (
+          <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center mt-0.5">
+                <span className="text-xs text-white font-bold">!</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800 mb-2">Stripe Configuration Required</h3>
+                <p className="text-amber-700 mb-3">
+                  To enable premium subscriptions, you need to configure real Stripe products and replace the placeholder price IDs in the code.
+                </p>
+                <div className="space-y-2 text-sm text-amber-600">
+                  <p><strong>Steps to configure:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1 ml-4">
+                    <li>Create products in your Stripe Dashboard</li>
+                    <li>Copy the real price IDs (they start with "price_1...")</li>
+                    <li>Replace the placeholder IDs in the STRIPE_PRICE_IDS constant</li>
+                  </ol>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3 bg-white hover:bg-amber-50"
+                  onClick={() => window.open('https://dashboard.stripe.com/products', '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open Stripe Dashboard
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {tiers.map((tier) => {
             const isCurrentTier = isSubscribed && subscription_tier === tier.name;
             const isFree = tier.name === 'Free';
+            const isDisabled = !isFree && isUsingPlaceholderPrices;
             
             return (
               <Card 
@@ -139,7 +177,9 @@ const Pricing: React.FC = () => {
                   tier.popular 
                     ? 'border-2 border-primary shadow-lg scale-105' 
                     : 'border border-border'
-                } ${isCurrentTier ? 'ring-2 ring-green-500' : ''}`}
+                } ${isCurrentTier ? 'ring-2 ring-green-500' : ''} ${
+                  isDisabled ? 'opacity-75' : ''
+                }`}
               >
                 {tier.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -205,14 +245,15 @@ const Pricing: React.FC = () => {
                     ) : (
                       <Button
                         onClick={() => tier.priceId && handleSubscribe(tier.priceId, tier.name)}
-                        disabled={isCheckingOut || !tier.priceId}
+                        disabled={isCheckingOut || !tier.priceId || isDisabled}
                         className={`w-full ${
                           tier.popular 
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' 
                             : ''
                         }`}
+                        title={isDisabled ? 'Configure Stripe products first' : ''}
                       >
-                        {!tier.priceId ? 'Coming Soon' : isCheckingOut ? 'Loading...' : tier.cta}
+                        {isDisabled ? 'Setup Required' : isCheckingOut ? 'Loading...' : tier.cta}
                       </Button>
                     )}
                   </div>
@@ -259,7 +300,6 @@ const Pricing: React.FC = () => {
           </div>
         </div>
 
-        {/* FAQ or Trust Signals */}
         <div className="text-center mt-16 text-muted-foreground">
           <p className="mb-2">✨ Start with our free tier - no credit card required</p>
           <p className="mb-2">🔒 Secure payment processing by Stripe</p>
