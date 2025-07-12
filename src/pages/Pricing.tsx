@@ -19,11 +19,11 @@ interface PricingTier {
   priceId: string | null;
 }
 
-// TODO: Replace these placeholder price IDs with real ones from your Stripe Dashboard
-// Go to https://dashboard.stripe.com/products to create products and get real price IDs
+// TODO: Replace these with your actual Stripe price IDs from your Dashboard
+// Go to https://dashboard.stripe.com/products to find your real price IDs
 const STRIPE_PRICE_IDS = {
-  premium: 'price_premium_monthly', // Replace with real Stripe price ID (e.g., price_1ABC123...)
-  pro: 'price_pro_monthly',         // Replace with real Stripe price ID (e.g., price_1XYZ789...)
+  premium: 'price_1REPLACE_WITH_YOUR_PREMIUM_PRICE_ID', // Replace with your actual Premium price ID
+  pro: 'price_1REPLACE_WITH_YOUR_PRO_PRICE_ID',         // Replace with your actual Pro price ID
 };
 
 const tiers: PricingTier[] = [
@@ -108,8 +108,8 @@ const Pricing: React.FC = () => {
   };
 
   const isUsingPlaceholderPrices = 
-    STRIPE_PRICE_IDS.premium.startsWith('price_premium_') || 
-    STRIPE_PRICE_IDS.pro.startsWith('price_pro_');
+    STRIPE_PRICE_IDS.premium.includes('REPLACE_WITH_YOUR') || 
+    STRIPE_PRICE_IDS.pro.includes('REPLACE_WITH_YOUR');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 py-12 px-4">
@@ -137,17 +137,17 @@ const Pricing: React.FC = () => {
                 <span className="text-xs text-white font-bold">!</span>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-amber-800 mb-2">Stripe Configuration Required</h3>
+                <h3 className="font-semibold text-amber-800 mb-2">Price IDs Need to be Updated</h3>
                 <p className="text-amber-700 mb-3">
-                  To enable premium subscriptions, you need to configure real Stripe products and replace the placeholder price IDs in the code.
+                  Replace the placeholder price IDs in the code with your actual Stripe price IDs to enable checkout.
                 </p>
                 <div className="space-y-2 text-sm text-amber-600">
-                  <p><strong>Steps to configure:</strong></p>
-                  <ol className="list-decimal list-inside space-y-1 ml-4">
-                    <li>Create products in your Stripe Dashboard</li>
-                    <li>Copy the real price IDs (they start with "price_1...")</li>
-                    <li>Replace the placeholder IDs in the STRIPE_PRICE_IDS constant</li>
-                  </ol>
+                  <p><strong>Current placeholders:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>Premium: {STRIPE_PRICE_IDS.premium}</li>
+                    <li>Pro: {STRIPE_PRICE_IDS.pro}</li>
+                  </ul>
+                  <p className="mt-2"><strong>Replace with real price IDs from your Stripe Dashboard</strong></p>
                 </div>
                 <Button 
                   variant="outline" 
@@ -251,9 +251,9 @@ const Pricing: React.FC = () => {
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' 
                             : ''
                         }`}
-                        title={isDisabled ? 'Configure Stripe products first' : ''}
+                        title={isDisabled ? 'Update price IDs in code first' : ''}
                       >
-                        {isDisabled ? 'Setup Required' : isCheckingOut ? 'Loading...' : tier.cta}
+                        {isDisabled ? 'Update Price IDs' : isCheckingOut ? 'Loading...' : tier.cta}
                       </Button>
                     )}
                   </div>

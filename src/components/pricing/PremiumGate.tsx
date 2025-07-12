@@ -16,8 +16,8 @@ interface PremiumGateProps {
   showUpgrade?: boolean;
 }
 
-// TODO: Replace with real Stripe price ID from your Stripe Dashboard
-const PREMIUM_PRICE_ID = 'price_premium_monthly'; // Replace with real price ID (e.g., price_1ABC123...)
+// TODO: Replace with your actual Premium price ID from Stripe Dashboard
+const PREMIUM_PRICE_ID = 'price_1REPLACE_WITH_YOUR_PREMIUM_PRICE_ID'; // Replace with your actual Premium price ID
 
 export const PremiumGate: React.FC<PremiumGateProps> = ({
   children,
@@ -48,7 +48,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
     });
   };
 
-  const isUsingPlaceholderPrice = PREMIUM_PRICE_ID.startsWith('price_premium_');
+  const isUsingPlaceholderPrice = PREMIUM_PRICE_ID.includes('REPLACE_WITH_YOUR');
 
   // Render premium gate
   return (
@@ -90,9 +90,12 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
         {/* Configuration Notice */}
         {isUsingPlaceholderPrice && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded text-center space-y-2">
-            <p className="text-xs text-amber-700 font-medium">⚠️ Stripe Setup Required</p>
+            <p className="text-xs text-amber-700 font-medium">⚠️ Price ID Update Required</p>
             <p className="text-xs text-amber-600">
-              Replace placeholder price ID with real Stripe product ID to enable checkout.
+              Replace placeholder price ID with actual Stripe price ID to enable checkout.
+            </p>
+            <p className="text-xs text-amber-600 font-mono bg-amber-100 p-1 rounded">
+              Current: {PREMIUM_PRICE_ID}
             </p>
             <Button 
               variant="outline" 
@@ -132,10 +135,10 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
                     onClick={handleUpgrade}
                     disabled={isCheckingOut || isUsingPlaceholderPrice}
                     className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                    title={isUsingPlaceholderPrice ? 'Configure Stripe products first' : ''}
+                    title={isUsingPlaceholderPrice ? 'Update price ID in code first' : ''}
                   >
                     <Crown className="w-4 h-4 mr-2" />
-                    {isUsingPlaceholderPrice ? 'Setup Required' : isCheckingOut ? 'Opening Checkout...' : 'Upgrade to Premium'}
+                    {isUsingPlaceholderPrice ? 'Update Price ID' : isCheckingOut ? 'Opening Checkout...' : 'Upgrade to Premium'}
                   </Button>
                   <Button 
                     variant="outline" 
